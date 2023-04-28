@@ -1,36 +1,13 @@
 # MoM_Basics
 
-#### Description
-提供 MoM 包的几何、网格相关类型和函数的定义、接口。MoM 本身被拆分为几个独立的包以方便开发时快读编译， 同时避免在无图形化界面使用时调入绘图相关包而导致报错。
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://deltaeecs.github.io/MoM_Basics.jl/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://deltaeecs.github.io/MoM_Basics.jl/dev/)
+[![Build Status](https://github.com/deltaeecs/MoM_Basics.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/deltaeecs/MoM_Basics.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![Coverage](https://codecov.io/gh/deltaeecs/MoM_Basics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/deltaeecs/MoM_Basics.jl)
 
-#### Software Architecture
-Software architecture description
+[![JuMoM](https://img.shields.io/badge/JuMoM-github-orange.svg)](https://github.com/deltaeecs/JuMoMs.git)
+[![JuMoM](https://img.shields.io/badge/JuMoM-gitee-orange.svg)](https://gitee.com/deltaeecs/JuMoMs.git)
 
-#### Installation
+#### Introduction
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### Instructions
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### Contribution
-
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
-
-
-#### Gitee Feature
-
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+A Julia package for meshes and basis functions of Method of Moments (MoM) and Multi-level Fast Multipole Algorithm (MLFMA). The integration package names JuMOMs ([github](https://github.com/deltaeecs/JuMoMs.git), [gitee](https://gitee.com/deltaeecs/JuMoMs.git)).
