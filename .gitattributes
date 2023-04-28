@@ -1,0 +1,2 @@
+*.jl linguist-language=julia
+*.nas linguist-language=julia

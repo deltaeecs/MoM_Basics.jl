@@ -21,5 +21,4 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/delateecs/MoM_Basics.jl",
-    devbranch="master",
 )
