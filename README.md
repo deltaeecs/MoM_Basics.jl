@@ -11,4 +11,4 @@
 
 #### 介绍
 
-提供 JuMOMs (主页：[github](https://github.com/deltaeecs/JuMoMs.git), [gitee](https://gitee.com/deltaeecs/JuMoMs.git)) 包的基础信息，包含几何、网格相关类型和函数的定义、接口，基函数相关信息接口。JuMoMs 本身被拆分为几个独立的包以方便开发时快读编译， 同时避免在无图形化界面使用时调入绘图相关包而导致报错。
+提供 JuMoMs (主页：[github](https://github.com/deltaeecs/JuMoMs.git), [gitee](https://gitee.com/deltaeecs/JuMoMs.git)) 包的基础信息，包含几何、网格相关类型和函数的定义、接口，基函数相关信息接口。JuMoMs 本身被拆分为几个独立的包以方便开发时快读编译， 同时避免在无图形化界面使用时调入绘图相关包而导致报错。
