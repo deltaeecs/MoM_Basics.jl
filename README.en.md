@@ -10,4 +10,4 @@
 
 #### Introduction
 
-A Julia package for meshes and basis functions of Method of Moments (MoM) and Multi-level Fast Multipole Algorithm (MLFMA). The integration package names JuMOMs ([github](https://github.com/deltaeecs/JuMoMs.git), [gitee](https://gitee.com/deltaeecs/JuMoMs.git)).
+A Julia package for meshes and basis functions of Method of Moments (MoM) and Multi-level Fast Multipole Algorithm (MLFMA). The integration package names JuMoMs ([github](https://github.com/deltaeecs/JuMoMs.git), [gitee](https://gitee.com/deltaeecs/JuMoMs.git)).
