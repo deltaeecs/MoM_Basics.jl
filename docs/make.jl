@@ -6,11 +6,11 @@ DocMeta.setdocmeta!(MoM_Basics, :DocTestSetup, :(using MoM_Basics); recursive=tr
 makedocs(;
     modules=[MoM_Basics],
     authors="deltaeecs <1225385871@qq.com> and contributors",
-    repo="https://github.com/delateecs/MoM_Basics.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/deltaeecs/MoM_Basics.jl/blob/{commit}{path}#{line}",
     sitename="MoM_Basics.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://delateecs.github.io/MoM_Basics.jl",
+        canonical="https://deltaeecs.github.io/MoM_Basics.jl",
         edit_link="master",
         assets=String[],
     ),
@@ -20,5 +20,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/delateecs/MoM_Basics.jl",
+    repo="github.com/deltaeecs/MoM_Basics.jl",
 )
