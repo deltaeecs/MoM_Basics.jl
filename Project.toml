@@ -20,7 +20,7 @@ ThreadsX = "ac1d9e8a-700a-412c-b207-f0111f4b6c0d"
 [compat]
 julia = "1"
 FastGaussQuadrature = "0.5"
-Meshes = "0.28-0.30"
+Meshes = "0.28 - 0.30"
 OffsetArrays = "1"
 ProgressMeter = "1"
 Rotations = "1"
