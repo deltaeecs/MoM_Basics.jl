@@ -3,15 +3,13 @@ using Test
 
 @testset "MoM_Basics.jl" begin
 
-    @testset ".Nas Formats" begin
+    proj_path = joinpath(@__DIR__, "..")
+    @testset ".nas formats" begin
 
-        filenames = [   "sphere_r1m_metal_300MHz.nas", "radomeTetra15mm.nas", 
-                        "radomeHexa15mm.nas", "missileHT15mm.nas",
-                        "sphereShellTetra50mm.nas", "sphereShellHexa50mm.nas",
-                        "sphereShellHT50mm.nas"]
+        filenames = readdir(joinpath(proj_path, "meshfiles"))
         for fn in filenames
             @show fn
-            filename = joinpath("../meshfiles", fn)
+            filename = joinpath(joinpath(proj_path, "meshfiles", fn))
             meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
             @test true
 
@@ -22,7 +20,7 @@ using Test
     end
 
     @testset "Triangle, RWG" begin
-        filename = "../meshfiles/sphere_r1m_metal_300MHz.nas"
+        filename = joinpath(proj_path, "meshfiles/Tri.nas")
         meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
         @test true
         ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData)
@@ -33,7 +31,7 @@ using Test
 
     @testset "Terahedron, PWC and SWG" begin
 
-        filename = "../meshfiles/radomeTetra15mm.nas"
+        filename = joinpath(proj_path, "meshfiles/Tetra.nas")
         meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
         @test true
 
@@ -43,7 +41,7 @@ using Test
         ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData, vbfT = :SWG)
         @test true
 
-        setGeosPermittivity!(geosInfo, 1 + 1im)
+        setGeosPermittivity!(geosInfo, 2(1. - 0.001im))
         @test true
 
         show_memory_time()
@@ -54,7 +52,7 @@ using Test
     
     @testset "Hexadron, PWC and RBF" begin
 
-        filename = "../meshfiles/radomeHexa15mm.nas"
+        filename = joinpath(proj_path, "meshfiles/Hexa.nas")
         meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
         @test true
 
@@ -64,7 +62,7 @@ using Test
         ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData, vbfT = :RBF)
         @test true
 
-        setGeosPermittivity!(geosInfo, 1 + 1im)
+        setGeosPermittivity!(geosInfo, 2(1. - 0.001im))
         @test true
 
         show_memory_time()
@@ -75,14 +73,71 @@ using Test
 
     @testset "Tetra + Hexadron, PWC" begin
 
-        filename = "../meshfiles/missileHT15mm.nas"
+        filename = joinpath(proj_path, "meshfiles/TetraHexa.nas")
         meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
         @test true
 
         ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData, vbfT = :PWC)
         @test true
 
-        setGeosPermittivity!(geosInfo, 1 + 1im)
+        setGeosPermittivity!(geosInfo, 2(1. - 0.001im))
+        @test true
+
+        show_memory_time()
+        @test true
+
+    end
+
+    @testset "Tri + Tetra, RWG + SWG, RWG + PWC" begin
+
+        filename = joinpath(proj_path, "meshfiles/TriTetra.nas")
+        meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
+        @test true
+
+        ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData; sbfT = :RWG, vbfT = :SWG)
+        @test true
+
+        ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData; sbfT = :RWG, vbfT = :PWC)
+        @test true
+
+        setGeosPermittivity!(geosInfo, 2(1. - 0.001im))
+        @test true
+
+        show_memory_time()
+        @test true
+
+    end
+
+    @testset "Tri + Hexa, RWG + RBF, RWG + PWC" begin
+
+        filename = joinpath(proj_path, "meshfiles/TriHexa.nas")
+        meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
+        @test true
+
+        ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData; sbfT = :RWG, vbfT = :RBF)
+        @test true
+
+        ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData; sbfT = :RWG, vbfT = :PWC)
+        @test true
+
+        setGeosPermittivity!(geosInfo, 2(1. - 0.001im))
+        @test true
+
+        show_memory_time()
+        @test true
+
+    end
+
+    @testset "Tri + Tetra + Hexa, RWG + PWC" begin
+
+        filename = joinpath(proj_path, "meshfiles/TriTetraHexa.nas")
+        meshData, εᵣs   =  getMeshData(filename; meshUnit=:mm);
+        @test true
+        
+        ngeo, nbf, geosInfo, bfsInfo =  getBFsFromMeshData(meshData; sbfT = :RWG, vbfT = :PWC)
+        @test true
+
+        setGeosPermittivity!(geosInfo, 2(1. - 0.001im))
         @test true
 
         show_memory_time()
