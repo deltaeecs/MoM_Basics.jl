@@ -205,24 +205,23 @@ function getCellsBFs(meshData, vbfT)
         return ntetra, nvtbf, tetrasInfo, vtbfsInfo
     elseif (meshData.hexanum  ==  meshData.geonum)
         return nhexa, nvhbf, hexasInfo, vhbfsInfo
-    elseif (meshData.trinum > 0) && (meshData.tetranum > 0)
-        geosInfo = [trisInfo,   OffsetVector(tetrasInfo, meshData.trinum)]
-        bfsInfo  = [stbfsInfo,  vtbfsInfo]
-        return ngeo, nbf, geosInfo, bfsInfo
-    elseif (meshData.trinum > 0) && (meshData.hexanum > 0)
-        geosInfo = [trisInfo,   OffsetVector(hexasInfo, meshData.trinum)]
-        bfsInfo  = [stbfsInfo,  vhbfsInfo]
-        return ngeo, nbf, geosInfo, bfsInfo
-    elseif (meshData.trinum > 0) && (meshData.tetranum > 0) && (meshData.tetranum > 0)
-        geosInfo = [trisInfo,   OffsetVector(tetrasInfo, meshData.trinum), OffsetVector(hexasInfo, meshData.trinum + meshData.tetranum)]
-        bfsInfo  = [stbfsInfo,  vtbfsInfo, vhbfsInfo]
-        return ngeo, nbf, geosInfo, bfsInfo
-    elseif (meshData.tetranum > 0) && (meshData.tetranum > 0)
-        geosInfo = [tetrasInfo, OffsetVector(hexasInfo, meshData.trinum + meshData.tetranum)]
-        bfsInfo  = [vtbfsInfo, vhbfsInfo]
+    else
+        geosInfo = Vector[]
+        bfsInfo  = Vector[]
+        if (meshData.trinum > 0)
+            push!(geosInfo, [trisInfo])
+            push!(bfsInfo, [stbfsInfo])
+        end
+        if (meshData.tetranum > 0)
+            push!(geosInfo, [OffsetVector(tetrasInfo, meshData.trinum)])
+            push!(bfsInfo, [vtbfsInfo])
+        end
+        if (meshData.hexanum > 0)
+            push!(geosInfo, [OffsetVector(hexasInfo, meshData.trinum + meshData.tetranum)])
+            push!(bfsInfo, [vhbfsInfo])
+        end
         return ngeo, nbf, geosInfo, bfsInfo
     end
-
 end
 
 """
