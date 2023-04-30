@@ -24,4 +24,5 @@ docs/site/
 Manifest.toml
 
 # package
-.vscode/*
+.vscode*
+results*
