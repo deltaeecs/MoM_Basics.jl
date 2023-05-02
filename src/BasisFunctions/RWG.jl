@@ -33,145 +33,145 @@ end
 
 RWG()   =    RWG{IntDtype, Precision.FT}()
 
-""" 
-此函数采用排序算法，将每个边的两个点、在三角形中的对点、三角形、基函数等属性信息放在一个大数组中，
-通过对不同的属性排序（如按边所在点随数组排序即可将边相同的点放在一起），即可得到基函数分组信息，以此可构造RWG基函数。
-函数完成以下功能：
-1. 构造基函数类型实例数组（类似结构化数组）rwgsInfo记录基函数相关信息，并作为返回值；
-2. 写入三角形类型实例数组trianglesInfo中关于基函数的信息。
+# """ 
+# 此函数采用排序算法，将每个边的两个点、在三角形中的对点、三角形、基函数等属性信息放在一个大数组中，
+# 通过对不同的属性排序（如按边所在点随数组排序即可将边相同的点放在一起），即可得到基函数分组信息，以此可构造RWG基函数。
+# 函数完成以下功能：
+# 1. 构造基函数类型实例数组（类似结构化数组）rwgsInfo记录基函数相关信息，并作为返回值；
+# 2. 写入三角形类型实例数组trianglesInfo中关于基函数的信息。
 
-函数输入值  :   trianglemeshData, trianglesInfo
-修改值      :   trianglesInfo
-返回值      :   rwgsInfo 
-"""
-function rwgbfConstructerTrianglesInfoModifiers!(trianglemeshData::TriangleMesh, trianglesInfo::Vector{TriangleInfo{IT, FT}}) where {IT<:Integer, FT<:AbstractFloat}
-    # 三角形数
-    trinum  =   trianglemeshData.trinum
+# 函数输入值  :   trianglemeshData, trianglesInfo
+# 修改值      :   trianglesInfo
+# 返回值      :   rwgsInfo 
+# """
+# function rwgbfConstructerTrianglesInfoModifiers!(trianglemeshData::TriangleMesh, trianglesInfo::Vector{TriangleInfo{IT, FT}}) where {IT<:Integer, FT<:AbstractFloat}
+#     # 三角形数
+#     trinum  =   trianglemeshData.trinum
     
-    # 创建数组，用于后续保存所有边的点和边的对点信息，然后是边所在的三角形id，在三角形中是第几个边，边所在RWG编号、正负等信息，共6列
-    edge2opp1tri2rwg2   =   zeros(IT, (trinum*3, 7))
-    # 利用内存视图提取其中的所有边的点和边的对点信息信息
-    edge2opp1           =   reshape(view(edge2opp1tri2rwg2, :, 1:3), (:, 9))
-    # 利用内存视图提取三角形信息的tri2和基函数信息的rwg2
-    tri2                =   @view edge2opp1tri2rwg2[:, 4:5]
-    rwg2                =   @view edge2opp1tri2rwg2[:, 6:7]
+#     # 创建数组，用于后续保存所有边的点和边的对点信息，然后是边所在的三角形id，在三角形中是第几个边，边所在RWG编号、正负等信息，共6列
+#     edge2opp1tri2rwg2   =   zeros(IT, (trinum*3, 7))
+#     # 利用内存视图提取其中的所有边的点和边的对点信息信息
+#     edge2opp1           =   reshape(view(edge2opp1tri2rwg2, :, 1:3), (:, 9))
+#     # 利用内存视图提取三角形信息的tri2和基函数信息的rwg2
+#     tri2                =   @view edge2opp1tri2rwg2[:, 4:5]
+#     rwg2                =   @view edge2opp1tri2rwg2[:, 6:7]
     
-    ## 创建三角形索引并根据排序更新
-    # 此维度为
-    tri2[:, 1] =   repeat(1:trinum,     outer=3)
-    tri2[:, 2] =   repeat(1:3,  inner = trinum )
+#     ## 创建三角形索引并根据排序更新
+#     # 此维度为
+#     tri2[:, 1] =   repeat(1:trinum,     outer=3)
+#     tri2[:, 2] =   repeat(1:3,  inner = trinum )
     
-    # 将每个三角形的三条边的点及其对点存放在edge2opp1数组中
-    #* 注意不可改变下面的顺序因为跟RWG基函数对应的自由点在三角形中顺序有关 *#
-    edge2opp1[:, 1] =   edge2opp1[:, 6] =   edge2opp1[:, 8] =   trianglemeshData.triangles[2, :]
-    edge2opp1[:, 2] =   edge2opp1[:, 4] =   edge2opp1[:, 9] =   trianglemeshData.triangles[3, :]
-    edge2opp1[:, 3] =   edge2opp1[:, 5] =   edge2opp1[:, 7] =   trianglemeshData.triangles[1, :]
-    # 重塑形状将每个边点组合放入同一维度
-    edge2opp1        =   reshape(edge2opp1, (:, 3))
+#     # 将每个三角形的三条边的点及其对点存放在edge2opp1数组中
+#     #* 注意不可改变下面的顺序因为跟RWG基函数对应的自由点在三角形中顺序有关 *#
+#     edge2opp1[:, 1] =   edge2opp1[:, 6] =   edge2opp1[:, 8] =   trianglemeshData.triangles[2, :]
+#     edge2opp1[:, 2] =   edge2opp1[:, 4] =   edge2opp1[:, 9] =   trianglemeshData.triangles[3, :]
+#     edge2opp1[:, 3] =   edge2opp1[:, 5] =   edge2opp1[:, 7] =   trianglemeshData.triangles[1, :]
+#     # 重塑形状将每个边点组合放入同一维度
+#     edge2opp1        =   reshape(edge2opp1, (:, 3))
 
-    ##  对前两列排序使得同一边的表示形式相同
-    #   对前两个构成边的点排序
-    @views sort!(edge2opp1tri2rwg2[:, 1:2], dims = 2, alg = ThreadsX.MergeSort)
+#     ##  对前两列排序使得同一边的表示形式相同
+#     #   对前两个构成边的点排序
+#     @views sort!(edge2opp1tri2rwg2[:, 1:2], dims = 2, alg = ThreadsX.MergeSort)
 
-    # 将每个三角形的三个角标点作为整体排序，次序按v1,v2,v3
-    edge2opp1tri2rwg2[:]   =  sortslices(edge2opp1tri2rwg2, dims = 1, by = x -> (x[1], x[2]), alg = ThreadsX.MergeSort)
+#     # 将每个三角形的三个角标点作为整体排序，次序按v1,v2,v3
+#     edge2opp1tri2rwg2[:]   =  sortslices(edge2opp1tri2rwg2, dims = 1, by = x -> (x[1], x[2]), alg = ThreadsX.MergeSort)
 
-    ## for 循环计算RWG基函数id
-    rwgplusid = @inbounds let rwgplusid   =   1
-        rwg2[1, 1]  =   1; rwg2[1, 2] = 1
-        # 初始值即1的位置要预计算一下
-        rwgplusid   +=  1
+#     ## for 循环计算RWG基函数id
+#     rwgplusid = @inbounds let rwgplusid   =   1
+#         rwg2[1, 1]  =   1; rwg2[1, 2] = 1
+#         # 初始值即1的位置要预计算一下
+#         rwgplusid   +=  1
 
-        # 从2开始循环，跟前一边不同为RWG+，跟前一边不同为RWG-
-        for ii in 2:(trinum*3)
-            if  (edge2opp1[ii, 1]  != edge2opp1[ii-1, 1]) ||
-                (edge2opp1[ii, 2]  != edge2opp1[ii-1, 2])
-                rwg2[ii, 1]     =   rwgplusid
-                rwg2[ii, 2]     =   1
-                rwgplusid   +=  1
-            elseif  (edge2opp1[ii, 1]  ==   edge2opp1[ii-1, 1]) &&
-                (edge2opp1[ii, 2]  ==   edge2opp1[ii-1, 2])
-                rwg2[ii, 1]        =   rwgplusid  - 1
-                rwg2[ii, 2]        =   -1
-            end #if
-        end #for
+#         # 从2开始循环，跟前一边不同为RWG+，跟前一边不同为RWG-
+#         for ii in 2:(trinum*3)
+#             if  (edge2opp1[ii, 1]  != edge2opp1[ii-1, 1]) ||
+#                 (edge2opp1[ii, 2]  != edge2opp1[ii-1, 2])
+#                 rwg2[ii, 1]     =   rwgplusid
+#                 rwg2[ii, 2]     =   1
+#                 rwgplusid   +=  1
+#             elseif  (edge2opp1[ii, 1]  ==   edge2opp1[ii-1, 1]) &&
+#                 (edge2opp1[ii, 2]  ==   edge2opp1[ii-1, 2])
+#                 rwg2[ii, 1]        =   rwgplusid  - 1
+#                 rwg2[ii, 2]        =   -1
+#             end #if
+#         end #for
 
-        rwgplusid
-    end #begin
+#         rwgplusid
+#     end #begin
 
-    # rwg函数数量
-    rwgnum      =   rwgplusid - 1
-    # 保存RWG基函数信息的数组
-    rwgsInfo    =   [RWG() for _ in 1:rwgnum]
+#     # rwg函数数量
+#     rwgnum      =   rwgplusid - 1
+#     # 保存RWG基函数信息的数组
+#     rwgsInfo    =   [RWG() for _ in 1:rwgnum]
 
-    # 写入基函数信息
-    @views let edgeii = 1, bfID::IT
-        while edgeii < 3*trinum
-            bfID   =   rwg2[edgeii, 1]
-            # 挑出第2[edgeii,1]个基函数信息
-            rwgInfo =   rwgsInfo[bfID]
-            if rwg2[edgeii, 1] ==  rwg2[edgeii + 1, 1]
-                # 全基函数信息
-                rwgInfo.isbd        =   false
-                rwgInfo.bfID       =   bfID
-                rwgInfo.inGeo      .=   tri2[edgeii:edgeii+1, 1]
-                rwgInfo.inGeoID    .=   tri2[edgeii:edgeii+1, 2]
-                # 设置边所在的点、计算边长
-                edgenode            =   trianglemeshData.node[:,edge2opp1[edgeii,1:2]]
-                rwgInfo.edgel       =   norm(edgenode[:, 1] - edgenode[:, 2])
-                rwgInfo.center[:]   =   mean(edgenode, dims = 2)
-                # 跳过负基函数部分
-                edgeii += 2
-            else
-                # 半基函数信息
-                rwgInfo.isbd    =   true
-                rwgInfo.bfID   =   bfID
-                rwgInfo.inGeo[1]=   tri2[edgeii, 1]
-                rwgInfo.inGeoID[1]  =   tri2[edgeii, 2]
-                # 设置边所在的点、计算边长
-                edgenode            =   trianglemeshData.node[:,edge2opp1[edgeii,1:2]]
-                rwgInfo.edgel       =   norm(edgenode[:, 1] - edgenode[:, 2])
-                rwgInfo.center[:]   =   mean(edgenode, dims = 2)
-                # 无负基函数部分
-                edgeii += 1
-            end # if
-        end #while
+#     # 写入基函数信息
+#     @views let edgeii = 1, bfID::IT
+#         while edgeii < 3*trinum
+#             bfID   =   rwg2[edgeii, 1]
+#             # 挑出第2[edgeii,1]个基函数信息
+#             rwgInfo =   rwgsInfo[bfID]
+#             if rwg2[edgeii, 1] ==  rwg2[edgeii + 1, 1]
+#                 # 全基函数信息
+#                 rwgInfo.isbd        =   false
+#                 rwgInfo.bfID       =   bfID
+#                 rwgInfo.inGeo      .=   tri2[edgeii:edgeii+1, 1]
+#                 rwgInfo.inGeoID    .=   tri2[edgeii:edgeii+1, 2]
+#                 # 设置边所在的点、计算边长
+#                 edgenode            =   trianglemeshData.node[:,edge2opp1[edgeii,1:2]]
+#                 rwgInfo.edgel       =   norm(edgenode[:, 1] - edgenode[:, 2])
+#                 rwgInfo.center[:]   =   mean(edgenode, dims = 2)
+#                 # 跳过负基函数部分
+#                 edgeii += 2
+#             else
+#                 # 半基函数信息
+#                 rwgInfo.isbd    =   true
+#                 rwgInfo.bfID   =   bfID
+#                 rwgInfo.inGeo[1]=   tri2[edgeii, 1]
+#                 rwgInfo.inGeoID[1]  =   tri2[edgeii, 2]
+#                 # 设置边所在的点、计算边长
+#                 edgenode            =   trianglemeshData.node[:,edge2opp1[edgeii,1:2]]
+#                 rwgInfo.edgel       =   norm(edgenode[:, 1] - edgenode[:, 2])
+#                 rwgInfo.center[:]   =   mean(edgenode, dims = 2)
+#                 # 无负基函数部分
+#                 edgeii += 1
+#             end # if
+#         end #while
 
-        #最后一个边是半基函数时进行处理
-        edgeii == 3*trinum && begin
-            # 挑出第rwg2[edgeii, 1]个基函数信息
-            rwgInfo         =   rwgsInfo[rwgnum]
-            rwgInfo.isbd    =   true
-            rwgInfo.bfID   =   bfID
-            rwgInfo.inGeo   =   tri2[edgeii, 1]
-            rwgInfo.inGeoID =   tri2[edgeii, 2]
-            edgenode        =   trianglemeshData.node[:,edge2opp1[edgeii,1:2]]
-            rwgInfo.edgel   =   norm(edgenode[:, 1] - edgenode[:, 2])
-            rwgInfo.center[:]   =   mean(edgenode, dims = 2)
-        end # begin
+#         #最后一个边是半基函数时进行处理
+#         edgeii == 3*trinum && begin
+#             # 挑出第rwg2[edgeii, 1]个基函数信息
+#             rwgInfo         =   rwgsInfo[rwgnum]
+#             rwgInfo.isbd    =   true
+#             rwgInfo.bfID   =   bfID
+#             rwgInfo.inGeo   =   tri2[edgeii, 1]
+#             rwgInfo.inGeoID =   tri2[edgeii, 2]
+#             edgenode        =   trianglemeshData.node[:,edge2opp1[edgeii,1:2]]
+#             rwgInfo.edgel   =   norm(edgenode[:, 1] - edgenode[:, 2])
+#             rwgInfo.center[:]   =   mean(edgenode, dims = 2)
+#         end # begin
 
-    end #let
+#     end #let
 
-    ## 设置三角形所包含的基函数信息
-    #  将edge2opp1tri2rwg2按三角形序号重新排序，以将每个三角形包含的基函数信息放在一起
-    edge2opp1tri2rwg2      .=  sortslices(edge2opp1tri2rwg2, dims = 1, by = x -> (x[4], x[5]), alg = ThreadsX.MergeSort)
+#     ## 设置三角形所包含的基函数信息
+#     #  将edge2opp1tri2rwg2按三角形序号重新排序，以将每个三角形包含的基函数信息放在一起
+#     edge2opp1tri2rwg2      .=  sortslices(edge2opp1tri2rwg2, dims = 1, by = x -> (x[4], x[5]), alg = ThreadsX.MergeSort)
     
-    #   此时bfid\正负信息每连续3个同属一个三角形，可将三角形包含的基函数信息写入三角形信息中
-    @views rwgsID  =   reshape(rwg2[:, 1], (3,:))
-    @views rwgspm  =   reshape(rwg2[:, 2], (3,:))
-    for triidx in 1:length(trianglesInfo)
-        triInfo =   trianglesInfo[triidx]
-        triInfo.inBfsID     .=   view(rwgsID, :, triidx)
+#     #   此时bfid\正负信息每连续3个同属一个三角形，可将三角形包含的基函数信息写入三角形信息中
+#     @views rwgsID  =   reshape(rwg2[:, 1], (3,:))
+#     @views rwgspm  =   reshape(rwg2[:, 2], (3,:))
+#     for triidx in 1:length(trianglesInfo)
+#         triInfo =   trianglesInfo[triidx]
+#         triInfo.inBfsID     .=   view(rwgsID, :, triidx)
 
-        # 此处将rwg基函数的正负直接封装进边长的正负
-        for edgeii in 1:3
-            (rwgspm[edgeii,triidx] == -1) &&  (triInfo.edgel[edgeii] *= -1)
-        end
-    end
+#         # 此处将rwg基函数的正负直接封装进边长的正负
+#         for edgeii in 1:3
+#             (rwgspm[edgeii,triidx] == -1) &&  (triInfo.edgel[edgeii] *= -1)
+#         end
+#     end
 
-    return rwgsInfo
+#     return rwgsInfo
 
-end #function
+# end #function
 
 """ 
 此函数和上面的函数相同，不同在于不生成半基函数
