@@ -220,7 +220,7 @@ function getCellsBFs(meshData, vbfT)
             push!(geosInfo, [OffsetVector(hexasInfo, meshData.trinum + meshData.tetranum)])
             push!(bfsInfo, [vhbfsInfo])
         end
-        return ngeo, nbf, geosInfo, bfsInfo
+        return ngeo, nbf, map(g -> g[1], geosInfo), map(b -> b[1], bfsInfo)
     end
 end
 
