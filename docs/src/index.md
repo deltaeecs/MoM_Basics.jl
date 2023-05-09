@@ -4,7 +4,8 @@ DocTestSetup = quote
 end
 ```
 
-![MoM](./assets/logo.png)
+<img src="./assets/logo.png" width="60%">
+
 # MoM_Basics
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://deltaeecs.github.io/MoM_Basics.jl/)
