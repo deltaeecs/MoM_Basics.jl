@@ -8,10 +8,11 @@ export GaussQuadratureInfo
 using StaticArrays
 
 
-"""创建类型用于保存高斯求积相对坐标、权重等信息:
-    类型参数：
-    GeoN: 3代表三角形，4代表四面体
-    GQN : 高斯求积点数"""
+"""
+    GaussQuadratureInfoStruct{FT<:Real}
+
+保存高斯求积相对坐标、权重等信息的结构体。
+"""
 struct GaussQuadratureInfoStruct{FT<:Real}
     coordinate  ::SMatrix
     weight      ::SVector
@@ -19,10 +20,9 @@ struct GaussQuadratureInfoStruct{FT<:Real}
 end
 
 """
-GaussQuadratureInfo
-构造函数
-imput
-GeoS :: :Triangle, :Quadrangle, :Tetrahedron, :Hexahedron
+    GaussQuadratureInfo(GeoS::Symbol, GQN::IT, FT::DataType = Float64) where {IT<:Integer}
+
+通过集合类型 `GeoS` 、高斯求积点数量 `GQN`、浮点数据类型 `FT` 构造高斯求积信息实例。
 """
 function GaussQuadratureInfo(GeoS::Symbol, GQN::IT, FT::DataType = Float64) where {IT<:Integer}
     uvw = SMatrix{0, 0, FT, 0}()
@@ -47,8 +47,13 @@ function GaussQuadratureInfo(GeoS::Symbol, GQN::IT, FT::DataType = Float64) wher
     end
 end
 
-"""num为三角形高斯求积点数，本函数给出1, 3, 4, 7的值，默认为3, 返回值为一个坐标数组(3*num)和一个权重向量(num)"""
-function gaussQuadratureTri( num::Integer = 3, FT::DataType=Float64)
+"""
+    gaussQuadratureTri( num::Integer = 3, FT::DataType = Float64)
+
+计算三角形高斯求积局部坐标和权重。
+`num` 为三角形高斯求积点数，本函数支持给出1, 3, 4, 6, 7的值，默认为3。
+"""
+function gaussQuadratureTri( num::Integer = 3, FT::DataType = Float64)
     # 根据求积点数计算对应坐标权重
     if num == 1
         coordinate  =   SArray{Tuple{3, num}, FT}([1/3 1/3 1/3]) 
@@ -89,7 +94,12 @@ function gaussQuadratureTri( num::Integer = 3, FT::DataType=Float64)
     
 end # function
 
-"""num为四面体高斯求积点数，本函数给出1, 4, 5, 11的值，默认为4, 返回值为一个坐标数组(4*num)和一个权重向量(num)"""
+"""
+    gaussQuadratureTetra( num::Integer = 4, FT::DataType=Float64)
+
+计算四面体高斯求积局部坐标和权重。
+`num` 为四面体高斯求积点数，本函数给出1, 4, 5, 11的值，默认为4。
+"""
 function gaussQuadratureTetra( num::Integer = 4, FT::DataType=Float64)
 
     if num == 1
@@ -131,7 +141,10 @@ function gaussQuadratureTetra( num::Integer = 4, FT::DataType=Float64)
 end # function
 
 """
-num 为四边形高斯求积点数，本函数给出 1, 4, 9 ... i² 的值，默认为4, 返回值为一个坐标数组(4*num)和一个权重向量(num)
+    gaussQuadratureQuad( num::Integer = 4, FT::DataType=Float64)
+
+计算四边形高斯求积局部坐标和权重。
+`num` 为四边形高斯求积点数，本函数给出 1, 4, 9 ... i² 的值，默认为4。
 """
 function gaussQuadratureQuad( num::Integer = 4, FT::DataType=Float64)
 
@@ -174,7 +187,10 @@ function gaussQuadratureQuad( num::Integer = 4, FT::DataType=Float64)
 end # function
 
 """
-num 为六面体高斯求积点数，本函数给出 1, 8, 27... i³ 的值，默认为8, 返回值为一个坐标数组(4*num)和一个权重向量(num)
+    gaussQuadratureHexa( num::Integer = 8, FT::DataType=Float64)
+
+计算六面体高斯求积局部坐标和权重。
+`num` 为六面体高斯求积点数，本函数给出 1, 8, 27... i³ 的值，默认为8。
 """
 function gaussQuadratureHexa( num::Integer = 8, FT::DataType=Float64)
 

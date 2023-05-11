@@ -1,29 +1,30 @@
 """
-阵列天线
+阵列天线抽象类
 """
 abstract type AbstractAntennaArray <:ExcitingSource end
 
-
-
 include("TaylorWins.jl")
-using .TaylorWins
+@reexport using .TaylorWins
 
 """
-阵列天线
-机扫阵 (mechanically scanned array, MSA)，相控阵 (Phased Array)
+    AntennaArray{FT<:Real, AT, N} <: AbstractAntennaArray
+
+机扫阵列天线 (mechanically scanned array, MSA)、相控阵 (Phased Array)阵列天线
 orient 采用的是欧拉角，参考['eulerRotationMat'](@ref)
-注意阵列初始指向由提供的天线单元合成，作为阵列只提供指向旋转
+注意阵列初始指向由提供的天线单元合成，作为阵列只提供指向旋转。
 """
 Base.@kwdef mutable struct AntennaArray{FT<:Real, AT, N} <: AbstractAntennaArray
     center::MVec3D{FT}  =   zero(MVec3D{FT})
     orient::MVec3D{FT}  =   zero(MVec3D{FT})
     size::NTuple{N, Int}=   Tuple(fill(0,N))
     dgap::NTuple{N, FT} =   Tuple(fill(Params.λ_0/2,N))
-    antennas    ::AbstractArray{AT, N}
+    antennas::AbstractArray{AT, N}
 end
 
 """
-初始化
+    AntennaArray(antennas::AbstractArray{AT, N}; center = zero(MVec3D{Precison.FT}), orient = MVec3D{Precison.FT}(0, 0, 1)) where {AT, N}
+
+初始化阵列天线，默认为方阵。
 """
 function AntennaArray(antennas::AbstractArray{AT, N}; center = zero(MVec3D{Precison.FT}), orient = MVec3D{Precison.FT}(0, 0, 1)) where {AT, N}
     N > 3 && throw("不支持3维以上阵列！")
@@ -35,8 +36,10 @@ end
 distance(arys)  =   norm(first(arys)[2].centergb - first(arys)[1].centergb)
 
 """
-提供快捷的阵列构建函数
-注意此处输入的阵列、单元指向必须为指定的欧拉角 (ZXZ) ['eulerRotationMat'](@ref)!
+    antennaArray(arysize, aryorient, dgap = Tuple(fill(Params.λ_0/2, length(arysize)));
+    sourceConstructer, sourceT, sourceorientlc, orientunit, coefftype = :uniform, arycenter = zero(MVec3D{Precision.FT}))
+
+提供快捷的阵列构建函数。注意此处输入的阵列、单元指向必须为指定的欧拉角 (ZXZ) ['eulerRotationMat'](@ref)。
 """
 function antennaArray(arysize, aryorient, dgap = Tuple(fill(Params.λ_0/2, length(arysize)));
     sourceConstructer, sourceT, sourceorientlc, orientunit, coefftype = :uniform, arycenter = zero(MVec3D{Precision.FT}))
@@ -92,13 +95,10 @@ function antennaArray(arysize, aryorient, dgap = Tuple(fill(Params.λ_0/2, lengt
 
 end
 
-#TODO
 """
-更新指向(阵列机械旋转)
-ary 阵列
-aryorient 阵列指向（ZXZ）
-sourceorientlc 源在阵列坐标的指向欧拉角（ZXZ）
-orientunit 指向欧拉角单位
+    update_orient!(ary::AT; aryorient, sourceorientlc, orientunit) where {AT<:AbstractAntennaArray}
+
+通过机械旋转更新天线阵列 `ary` 的阵列指向为 `aryorient`，天线单元指向为 `sourceorientlc`，指向角单位为 `orientunit` 。
 """
 function update_orient!(ary::AT; aryorient, sourceorientlc, orientunit) where {AT<:AbstractAntennaArray}
     
@@ -124,7 +124,10 @@ function update_orient!(ary::AT; aryorient, sourceorientlc, orientunit) where {A
 
 end
 
+#TODO
 """
+    update_phase!(ary::AT, phasef) where {AT<:AbstractAntennaArray}
+
 更新指向相位
 """
 function update_phase!(ary::AT, phasef) where {AT<:AbstractAntennaArray}
@@ -133,9 +136,11 @@ end
 
 
 """
-设置差阵列, 将一半的天线相位置反
+    setdiffArray!(ary[, dim = 1])
+
+将阵列天线 `ary` 在 `dim` 方向一半单元设置为反相位，从而实现差方向图。
 """
-function setdiffArray!(ary, dim)
+function setdiffArray!(ary, dim = 1)
     dim > 2 && throw("只支持一、二维阵列")
     for i in 1:ary.size[1], j in 1:ary.size[2]
         antenna =   ary.antennas[i, j]
@@ -151,14 +156,9 @@ function setdiffArray!(ary, dim)
 end
 
 """
-给定点的远场电场计算函数,\n
-输入参数:\n
-r_observe       ::  Vec3D{FT}, 要计算的位置(局部坐标下),\n
-antennaarray    ::  Vector{ST}, 包含多个源实例的向量,\n
-必选参数\n
-r_coortype  ::  Char, 输入坐标类型: 直角坐标为符号： :C，球坐标： :S，默认为球坐标输入。\n
-返回值：\n
-电场值       ::  SVec3D{FT}\n
+    sourceFarEfield(ary::AT, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real, AT<:AbstractAntennaArray}
+
+计算天线阵列 `ary` 在全局坐标下给定方向 `r̂θϕ` 的远场电场。
 """
 function sourceFarEfield(ary::AT, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real, AT<:AbstractAntennaArray}
     θϕ = r̂θϕ.θϕ
@@ -171,14 +171,9 @@ function sourceFarEfield(ary::AT, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real, AT<
 end # function
 
 """
-给定点的电场计算函数,\n
-输入参数:\n
-r_observe   ::  Vec3D{FT}, 要计算的位置(局部坐标下),\n
-sources     ::  Vector{ST}, 包含多个源实例的向量,\n
-必选参数\n
-r_coortype  ::  Char, 输入坐标类型: 直角坐标为符号： :C，球坐标： :S，默认为球坐标输入。\n
-返回值：\n
-电场值       ::  SVec3D{FT}\n
+    sourceEfield(ary::AT, rvec::AbstractVector{FT}) where {FT<:Real,  AT<:AbstractAntennaArray}
+
+计算天线阵列 `ary` 在全局坐标下给定位置 `rvec` 处的电场。
 """
 function sourceEfield(ary::AT, rvec::AbstractVector{FT}) where {FT<:Real,  AT<:AbstractAntennaArray}
     re = zero(MVec3D{Complex{FT}})

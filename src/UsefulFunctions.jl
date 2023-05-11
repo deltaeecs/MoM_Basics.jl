@@ -217,6 +217,8 @@ end
 
 
 """
+    eulerRotationMat(α::FT, β::FT, γ::FT, unit::Symbol) where{FT<:Real}
+
 根据坐标旋转的欧拉角计算旋转矩阵, 定义旋转顺序为：
 “滚动” → “俯仰” → “偏航”，
 即按绕 “z轴” → “x轴” → “z轴”的顺序，分别旋转

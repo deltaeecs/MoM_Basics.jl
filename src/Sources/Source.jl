@@ -1,8 +1,17 @@
 ## 本文件定义源类型和一些相关的计算函数
-# 源抽象类
+"""
+激励源抽象类
+"""
 abstract type ExcitingSource end
+
+"""
+天线抽象类
+"""
 abstract type AntennaType <:ExcitingSource end
 
+"""
+复合激励类
+"""
 const ExcitingSources = Union{ExcitingSource, AbstractVector{ExcitingSource}}
 
 # 各种类型的源

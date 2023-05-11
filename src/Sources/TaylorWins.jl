@@ -3,6 +3,8 @@ module TaylorWins
 
 export taylorwin
 """
+    taylorwin(L::IT, nbar = 4, sll = -30) where {IT<:Integer}
+
 TAYLORWIN   Taylor window.
 
 TAYLORWIN(N) returns an N-point Taylor window in a column vector.
@@ -56,13 +58,15 @@ function taylorwin(L::IT, nbar = 4, sll = -30) where {IT<:Integer}
         Fm[m] = calculateFm(m,sp2,A,nbar)
         summation .= Fm[m] .* cospi.(2*m*xi) .+ summation
     end
-    w = w .+ 2*summation
+    return w .+ 2*summation
 end # function
     
 """
-计算Fm
+    calculateFm(m, sp2, A, nbar)
+
+计算 Fm。
 """
-function calculateFm(m,sp2,A,nbar)
+function calculateFm(m, sp2, A, nbar)
     # Calculate the cosine weights.
     
     n = 1:(nbar-1)
@@ -71,7 +75,7 @@ function calculateFm(m,sp2,A,nbar)
     Num = prod((1 .- (m^2/sp2) ./ (A^2 .+ (n .- 0.5) .^ 2)))
     Den = prod((1 .- m^2 ./ p .^ 2))
     
-    ((-1)^mod(m+1, 2) * Num) / (2 * Den)
+    return ((-1)^mod(m+1, 2) * Num) / (2 * Den)
 end # function
 
 
