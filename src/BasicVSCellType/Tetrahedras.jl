@@ -1,7 +1,9 @@
 # 本文件构建四面体形类和一些积分函数、奇异值处理等
 
 """
-四面体网格文件，包括四面体数、节点、构成四面体的节点 id 数组等信息
+    HexahedraMesh{IT, FT} <: MeshDataType
+
+四面体网格文件，包括四面体数 `tetranum`、节点 `node`、构成四面体的节点 id 数组 `tetrahedras` 等信息。
 """
 struct TetrahedraMesh{IT, FT} <: MeshDataType
     tetranum      ::Int
@@ -9,21 +11,24 @@ struct TetrahedraMesh{IT, FT} <: MeshDataType
     tetrahedras   ::Array{IT, 2}
 end
 
-
 """
-单个四面体信息：\n
-tetraID     ::IT                    编号\n
-volume      ::FT                    体积\n
-ε           ::CT                    相对介电常数\n
-κ           ::CT                    介质对比度\n
-center      ::MVec3D{FT}            中心坐标\n
-verticesID  ::MVector{4, IT}        所在节点id\n
-vertices    ::MMatrix{3, 4, FT, 12} 四面体4个角点坐标，每列为一个点\n
-facesn̂      ::MMatrix{3, 4, FT, 12} 四个面的外法向量\n
+    TetrahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: VolumeCellType{IT, FT, CT}
+
+四面体信息结构体：
+```
+tetraID     ::IT                    编号
+volume      ::FT                    体积
+ε           ::CT                    相对介电常数
+κ           ::CT                    介质对比度
+center      ::MVec3D{FT}            中心坐标
+verticesID  ::MVector{4, IT}        所在节点id
+vertices    ::MMatrix{3, 4, FT, 12} 四面体4个角点坐标，每列为一个点
+facesn̂      ::MMatrix{3, 4, FT, 12} 四个面的外法向量
 facesvid    ::MMatrix{3, 4, IT, 12} 四个面包含的三个id
-facesArea   ::MVector{4, FT}        四个面的面积（根据为unitri正负部分赋予正负号）\n
-faces       ::Vector{Tris4Tetra{IT, FT}}    四个面的具体信息\n
-inBfsID     ::Vector{IT}            四面体所在的基函数的ID\n
+facesArea   ::MVector{4, FT}        四个面的面积（根据为unitri正负部分赋予正负号）
+faces       ::Vector{Tris4Tetra{IT, FT}}    四个面的具体信息
+inBfsID     ::Vector{IT}            四面体所在的基函数的ID
+```
 """
 mutable struct TetrahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: VolumeCellType{IT, FT, CT}
     tetraID     ::IT
@@ -40,7 +45,9 @@ mutable struct TetrahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: V
 end
 
 """
-TriangleInfo的默认构造函数，所有元素置零\n
+    TetrahedraInfo{IT, FT, CT}(hexaID::IT = zero(IT)) where {IT <: Integer, FT<:AbstractFloat, CT<:Complex}
+
+`TetrahedraInfo` 的默认构造函数，除了输入的编号 `tetraID` 外所有元素置零。
 """
 function TetrahedraInfo{IT, FT, CT}(tetraID::IT = zero(IT)) where {IT <: Integer, FT<:AbstractFloat, CT<:Complex}
     volume::FT  =    zero(FT)
@@ -58,17 +65,28 @@ function TetrahedraInfo{IT, FT, CT}(tetraID::IT = zero(IT)) where {IT <: Integer
 end
 
 
-# 高斯求积点数
+```
+正常求积四面体高斯求积点数。
+```
 const GQPNTetra      =   5
-# 处理奇异性时的高斯求积点
+```
+处理奇异性时的四面体高斯求积点数。
+```
 const GQPNTetraSglr  =   11
 
-
-~(@isdefined TetraGQInfo)       && const TetraGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetra, Precision.FT)
-~(@isdefined TetraGQInfoSglr)   && const TetraGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetraSglr, Precision.FT)
+```
+正常求积四面体高斯求积信息。
+```
+const TetraGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetra, Precision.FT)
+```
+处理奇异性时四面体高斯求积信息。
+```
+const TetraGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetraSglr, Precision.FT)
 
 """
-用于在预分配好的数组里写入对应的四面体id和点坐标数据
+    setHexaCoor!( tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, tetraMeshData::TetrahedraMesh{IT, FT}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
+
+在预分配好的四面体数组 `tetrasInfo` 里写入 `tetraMeshData` 中对应的四面体编号、点坐标、中心位置数据。
 """
 function setTetraCoor!( tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, 
                         tetraMeshData::TetrahedraMesh{IT, FT}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
@@ -83,9 +101,10 @@ function setTetraCoor!( tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}},
 
     return nothing
 end
-
 """
-计算四面体边长、面外法向量、面积，直接写入tetraInfo（单个四面体类型实例）
+    setTetraParam!(tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
+
+计算四面体体积、面外法向量、面积，并写入 `tetrasInfo` 。
 """
 function setTetraParam!(tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
 
@@ -134,7 +153,10 @@ end # function
 
 
 """
-将四面体、基函数相关的构造函数封装在此函数里
+    getTetrasInfo(tetrameshData::TetrahedraMesh{IT, FT}, VolumeBFType::Symbol) where{IT, FT}
+
+
+根据四面体网格信息 `tetrameshData` 和体基函数类型 `VolumeBFType` 生成网格信息向量 `tetrasInfo` 和基函数信息向量 `bfsInfo` 。
 """
 function getTetrasInfo(tetrameshData::TetrahedraMesh{IT, FT}, VolumeBFType::Symbol) where{IT, FT}
     # 分配四面体信息类型数组
@@ -149,39 +171,35 @@ function getTetrasInfo(tetrameshData::TetrahedraMesh{IT, FT}, VolumeBFType::Symb
 end
 
 """
-此函数用于设置 SWG 基函数的两个四面体的介质对比度差值
+    setδκ!(geosInfo::AbstractVector{VT}) where {VT<:VolumeCellType}
+
+设置体网格信息 `geosInfo` 中每个面上的介质对比度差值。
 """
-function setδκ!(tetrasInfo::AbstractVector{TetrahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:Real, CT<:Complex{FT}}
-    # 线程锁，防止对同一数据操作引起的冲突
-    κLock = SpinLock()
+function setδκ!(geosInfo::AbstractVector{VT}) where {VT<:VolumeCellType}
     # 循环置零
-    @threads for it in eachindex(tetrasInfo)
-        # 四面体
-        tetra   =   tetrasInfo[it]
+    @threads for it in eachindex(geosInfo)
+        # 体网格
+        geo   =   geosInfo[it]
         # 对面循环
-        for iface in 1:4
-            # 面
-            face =  tetra.faces[iface]
+        for face in geo.faces
             # 置零
             face.δκ = 0
         end
     end
     # 循环设置δκ
-    @threads for it in eachindex(tetrasInfo)
-        # 四面体
-        tetra   =   tetrasInfo[it]
+    @threads for it in eachindex(geosInfo)
+        # 体网格
+        geo   =   geosInfo[it]
         # 四面体的介质对比度
-        κ   =    tetra.κ
+        κ   =    geo.κ
         # 对面循环
-        for iface in 1:4
+        for iface in eachindex(geo.faces)
             # 面
-            face =  tetra.faces[iface]
+            face =  geo.faces[iface]
             # 根据在正负面决定加上或减去 κ
-            temp =  (tetra.facesArea[iface] > 0 ? κ : -κ)
+            temp =  (geo.facesArea[iface] > 0 ? κ : -κ)
             # 写入值
-            lock(κLock)
             face.δκ += temp
-            unlock(κLock)
         end
     end
 end

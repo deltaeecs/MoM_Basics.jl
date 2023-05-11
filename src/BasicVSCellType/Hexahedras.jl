@@ -1,7 +1,9 @@
 # 本文件构建六面体形类和一些积分函数、奇异值处理等
 
 """
-六面体网格文件，包括六面体数、节点、构成六面体的节点 id 数组等信息
+    HexahedraMesh{IT, FT} <: MeshDataType
+
+六面体网格文件，包括六面体数 `hexnum`、节点 `node`、构成六面体的节点 id 数组 `hexahedras` 等信息。
 """
 struct HexahedraMesh{IT, FT} <: MeshDataType
     hexnum      ::Int
@@ -23,19 +25,23 @@ include("Quadrangle.jl")
 # end
 
 """
-单个六面体信息：\n
-hexaID      ::IT                    编号\n
-volume      ::FT                    体积\n
-ε           ::CT                    相对介电常数\n
-κ           ::CT                    介质对比度\n
-center      ::MVec3D{FT}            中心坐标\n
-verticesID  ::MVector{8, IT}        所在节点id\n
-vertices    ::MMatrix{3, 8, FT,24} 六面体4个角点坐标，每列为一个点\n
-facesn̂      ::MMatrix{3, 8, FT,24} 四个面的外法向量\n
-facesvid    ::MMatrix{3, 8, IT,24} 四个面包含的四个id
-facesArea   ::MVector{6, FT}        四个面的面积（根据为unitri正负部分赋予正负号）\n
-faces       ::Vector{Quads4Hexa{IT, FT}}    四个面的具体信息\n
-inBfsID     ::Vector{IT}            六面体所在的基函数的ID\n
+    HexahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: VolumeCellType{IT, FT, CT}
+
+六面体信息结构体：
+```
+hexaID      ::IT                    编号
+volume      ::FT                    体积
+ε           ::CT                    相对介电常数
+κ           ::CT                    介质对比度
+center      ::MVec3D{FT}            中心坐标
+verticesID  ::MVector{8, IT}        所在节点id
+vertices    ::MMatrix{3, 8, FT,24}  六面体4个角点坐标，每列为一个点
+facesn̂      ::MMatrix{3, 8, FT,24}  四个面的外法向量
+facesvid    ::MMatrix{3, 8, IT,24}  四个面包含的四个id
+facesArea   ::MVector{6, FT}        四个面的面积（根据为unitri正负部分赋予正负号）
+faces       ::Vector{Quads4Hexa{IT, FT}}    四个面的具体信息
+inBfsID     ::Vector{IT}            六面体所在的基函数的ID
+```
 """
 mutable struct HexahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: VolumeCellType{IT, FT, CT}
     hexaID      ::IT
@@ -51,9 +57,10 @@ mutable struct HexahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: Vo
     inBfsID     ::Vector{IT}
 end
 
-
 """
-HexahedraInfo的默认构造函数，所有元素置零\n
+    HexahedraInfo{IT, FT, CT}(hexaID::IT = zero(IT)) where {IT <: Integer, FT<:AbstractFloat, CT<:Complex}
+
+`HexahedraInfo` 的默认构造函数，除了输入的编号 `hexaID` 外所有元素置零。
 """
 function HexahedraInfo{IT, FT, CT}(hexaID::IT = zero(IT)) where {IT <: Integer, FT<:AbstractFloat, CT<:Complex}
     volume::FT  =   zero(FT)
@@ -72,21 +79,37 @@ end
 
 
 ## 修改的话与四边形一起修改，保证与四边形的对齐（同一纬度采样点一样）
-# 高斯求积点数
+```
+正常求积六面体高斯求积点数。
+```
 const GQPNHexa      =   8
-# 处理奇异性时的高斯求积点
+```
+处理奇异性时的六面体高斯求积点数。
+```
 const GQPNHexaSglr  =   27
-# 处理奇异性时的超高奇异性高斯求积点
+```
+处理超高奇异性时的六面体高斯求积点数。
+```
 const GQPNHexaSSglr =   64
 
-
-~(@isdefined HexaGQInfo)       && const HexaGQInfo      =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexa, Precision.FT)
-~(@isdefined HexaGQInfoSglr)   && const HexaGQInfoSglr  =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSglr, Precision.FT)
-~(@isdefined HexaGQInfoSSglr)  && const HexaGQInfoSSglr =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSSglr, Precision.FT)
+```
+正常求积六面体高斯求积信息。
+```
+const HexaGQInfo      =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexa, Precision.FT)
+```
+处理奇异性时六面体高斯求积信息。
+```
+const HexaGQInfoSglr  =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSglr, Precision.FT)
+```
+处理超奇异性时六面体高斯求积信息。
+```
+const HexaGQInfoSSglr =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSSglr, Precision.FT)
 
 
 """
-用于在预分配好的数组里写入对应的四面体id和点坐标数据
+    setHexaCoor!( hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}, hexaMeshData::HexahedraMesh{IT, FT}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
+
+在预分配好的六面体数组 `hexasInfo` 里写入 `hexaMeshData` 中对应的六面体编号、点坐标、中心位置数据。
 """
 function setHexaCoor!( hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}, 
                         hexaMeshData::HexahedraMesh{IT, FT}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
@@ -104,7 +127,9 @@ end
 
 
 """
-计算体积、面外法向量、面积，直接写入hexaInfo（单个六面体类型实例）
+    setHexaParam!(hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
+
+计算六面体体积、面外法向量、面积，并写入 `hexasInfo` 。
 """
 function setHexaParam!(hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
 
@@ -116,7 +141,7 @@ function setHexaParam!(hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}) where {IT<:
         hexa    =   Hexahedron(Meshes.Point3.(eachcol(hexaInfo.vertices)))
         # 体积
         hexaInfo.volume =   measure(hexa)
-        # 六个面
+        # 六个四边形面
         quads   =   boundaryRBF(hexa)
         # 对四个面循环计算面的外法向量，注意第 facei 个面为 第 facei 个 vertice 对面的四个点构成的四边形
         for facei in 1:6
@@ -148,7 +173,9 @@ end # function
 
 
 """
-将六面体、基函数相关的构造函数封装在此函数里
+    getHexasInfo(hexameshData::HexahedraMesh{IT, FT}, VolumeBFType::Symbol) where{IT, FT}
+
+根据六面体网格信息 `hexameshData` 和体基函数类型 `VolumeBFType` 生成网格信息向量 `hexasInfo` 和基函数信息向量 `bfsInfo` 。
 """
 function getHexasInfo(hexameshData::HexahedraMesh{IT, FT}, VolumeBFType::Symbol) where{IT, FT}
 
@@ -167,11 +194,11 @@ end
 
 
 """
-此函数用于设置 RBF 基函数的两个六面体的介质对比度差值
+    setδκ!(hexasInfo::AbstractVector{HexahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:Real, CT<:Complex{FT}}
+
+设置六面体网格信息 `hexasInfo` 中每个面上的介质对比度差值。
 """
 function setδκ!(hexasInfo::AbstractVector{HexahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:Real, CT<:Complex{FT}}
-    # 线程锁，防止对同一数据操作引起的冲突
-    κLock = SpinLock()
     # 循环置零
     @threads for it in eachindex(hexasInfo)
         # 六面体
@@ -197,55 +224,51 @@ function setδκ!(hexasInfo::AbstractVector{HexahedraInfo{IT, FT, CT}}) where {I
             # 根据在正负面决定加上或减去 κ
             temp =  (hexa.facesArea[iface] > 0 ? κ : -κ)
             # 写入值
-            lock(κLock)
             face.δκ += temp
-            unlock(κLock)
         end
     end
 end
 
-"""
-计算得到第ii个几何体的高斯求积坐标
-    该函数针对六面体， 输入值：
-vertices：  六面体角点坐标， MArray{Tuple{3, 3}, FT}
-ii      ：  索取第几个坐标
-GQMode  :   用于奇异积分时
-返回值  :  第ii个高斯求积点坐标, 类型为:SVector{3, FT}
-"""
-@inline function getGQPHexa(hexa::HexahedraInfo, ii::IT) where {IT <: Integer}
-    # 直接向量相乘，此处采用的是矩阵乘法
-    @views @inbounds hexa.vertices * HexaGQInfo.coordinate[:, ii]
-end
+@doc """
+    getGQPHexa(hexa::HexahedraInfo, ii::IT) where {IT <: Integer}
+    getGQPHexa(hexa::HexahedraInfo)
 
+计算 `hexa` 正常求积的第 `i` 个或所有高斯求积坐标。
 """
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
-"""
-@inline function getGQPHexa(hexa::HexahedraInfo)
+function getGQPHexa(hexa::HexahedraInfo, i::IT) where {IT <: Integer}
+    # 直接向量相乘，此处采用的是矩阵乘法
+    @views @inbounds hexa.vertices * HexaGQInfo.coordinate[:, i]
+end
+function getGQPHexa(hexa::HexahedraInfo)
     # 直接向量相乘，此处采用的是矩阵乘法
     hexa.vertices * HexaGQInfo.coordinate
 end
 
-@inline function getGQPHexaSglr(hexa::HexahedraInfo, ii::IT) where {IT <: Integer}
-    # 直接向量相乘，此处采用的是矩阵乘法
-    @views @inbounds hexa.vertices * HexaGQInfoSglr.coordinate[:, ii]
-end
+@doc """
+    getGQPHexaSglr(hexa::HexahedraInfo, ii::IT) where {IT <: Integer}
+    getGQPHexaSglr(hexa::HexahedraInfo)
 
-""" 
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
+计算 `hexa` 处理奇异性求积的第 `i` 个或所有高斯求积坐标。
 """
+function getGQPHexaSglr(hexa::HexahedraInfo, i::IT) where {IT <: Integer}
+    # 直接向量相乘，此处采用的是矩阵乘法
+    @views @inbounds hexa.vertices * HexaGQInfoSglr.coordinate[:, i]
+end
 @inline function getGQPHexaSglr(hexa::HexahedraInfo)
     # 直接向量相乘，此处采用的是矩阵乘法
     hexa.vertices * HexaGQInfoSglr.coordinate
 end
 
-@inline function getGQPHexaSSglr(hexa::HexahedraInfo, ii::IT) where {IT <: Integer}
-    # 直接向量相乘，此处采用的是矩阵乘法
-    @views @inbounds hexa.vertices * HexaGQInfoSSglr.coordinate[:, ii]
-end
+@doc """
+    getGQPHexaSSglr(hexa::HexahedraInfo, ii::IT) where {IT <: Integer}
+    getGQPHexaSSglr(hexa::HexahedraInfo)
 
-""" 
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
+计算 `hexa` 处理超奇异性求积的第 `i` 个或所有高斯求积坐标。
 """
+@inline function getGQPHexaSSglr(hexa::HexahedraInfo, i::IT) where {IT <: Integer}
+    # 直接向量相乘，此处采用的是矩阵乘法
+    @views @inbounds hexa.vertices * HexaGQInfoSSglr.coordinate[:, i]
+end
 @inline function getGQPHexaSSglr(hexa::HexahedraInfo)
     # 直接向量相乘，此处采用的是矩阵乘法
     hexa.vertices * HexaGQInfoSSglr.coordinate

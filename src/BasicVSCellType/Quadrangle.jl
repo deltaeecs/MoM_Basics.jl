@@ -1,12 +1,17 @@
 
 """
-单个构成六面体的四边形信息：\n
-vertices    ::MMatrix{3, 4, FT, 12} 四边形 4 个角点坐标，每列为一个点\n
-edgel       ::MVector{4, FT}       四边长\n
-edgev̂       ::MMatrix{3, 4, FT, 12} 四个边的指向向量\n
-edgen̂       ::MMatrix{3, 4, FT, 12} 四个边的外法向量\n
-# RWGfreevid  ::MVector{3, IT}     (合理安排位置后，四个基函数的自由端即为四边形四个点的顺序
-                                    因此再不需要单独保存)对应四个RWG基函数的自由点在该四边形中的编号\n
+    Quads4Hexa{IT<: Integer, FT<:AbstractFloat} <: SurfaceCellType{IT, FT}
+
+单个构成六面体的四边形信息：
+```
+isbd        ::Bool                  是否在体区域边界，
+δκ          ::Complex{FT}           介质对比度变化量，
+vertices    ::MMatrix{3, 4, FT, 12} 四边形 4 个角点坐标，每列为一个点，
+edgel       ::MVector{4, FT}        四个边长，
+edgev̂       ::MMatrix{3, 4, FT, 12} 四个边的单位指向向量，
+edgen̂       ::MMatrix{3, 4, FT, 12} 四个边的单位外法向量。
+```
+合理安排位置后，四个基函数的自由端即为四边形四个点的顺序。
 """
 mutable struct Quads4Hexa{IT<: Integer, FT<:AbstractFloat} <: SurfaceCellType{IT, FT}
     isbd        ::Bool
@@ -18,7 +23,9 @@ mutable struct Quads4Hexa{IT<: Integer, FT<:AbstractFloat} <: SurfaceCellType{IT
 end
 
 """
-Quads4Hexa的默认构造函数，所有元素置零
+    Quads4Hexa{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
+
+Quads4Hexa的默认构造函数，默认为边界，其它所有元素置零。
 """
 function Quads4Hexa{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
     isbd        =    true
@@ -31,7 +38,9 @@ function Quads4Hexa{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
 end
 
 """
-Quads4Hexa的取高斯求积点函数
+    (q::Quads4Hexa)(u::FT, v::FT) where {FT}
+
+计算六面体边界四边形在局部坐标 `(u, v)` 下的点。
 """
 function (q::Quads4Hexa)(u::FT, v::FT) where {FT}
     w = SVector{4, FT}((1-u)*(1-v), u*(1-v), u*v, (1-u)*v)
@@ -39,62 +48,79 @@ function (q::Quads4Hexa)(u::FT, v::FT) where {FT}
 end
 
 # 改的话和六面体一起改！
-# 1维度高斯求积点数
+"""
+六面体边界四边形 1 维度高斯求积点数。
+"""
 const GQPNQuad1D      =   2
-# 处理奇异性时的高斯求积点
+"""
+处理奇异性时六面体边界四边形 1 维度高斯求积点数。
+"""
 const GQPNQuad1DSglr  =   3
-# 处理超奇异性时的高斯求积点
+"""
+处理超奇异性时六面体边界四边形 1 维度高斯求积点数。
+"""
 const GQPNQuad1DSSglr =   4
-# 高斯求积点数
+"""
+六面体边界四边形正常处理高斯求积时高斯求积点数。
+"""
 const GQPNQuad      =   GQPNQuad1D^2
-# 处理奇异性时的高斯求积点
+"""
+六面体边界四边形处理奇异性时高斯求积点数。
+"""
 const GQPNQuadSglr  =   GQPNQuad1DSglr^2
-# 处理超奇异性时的高斯求积点
+"""
+六面体边界四边形处理超奇异性时高斯求积点数。
+"""
 const GQPNQuadSSglr =   GQPNQuad1DSSglr^2
 
-
-~(@isdefined QuadGQInfo)       && const QuadGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuad, Precision.FT)
-~(@isdefined QuadGQInfoSglr)   && const QuadGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSglr, Precision.FT)
-~(@isdefined QuadGQInfoSSglr)  && const QuadGQInfoSSglr   =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSSglr, Precision.FT)
-
+"""
+六面体边界四边形正常处理高斯求积信息。
+"""
+const QuadGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuad, Precision.FT)
+"""
+六面体边界四边形处理奇异性高斯求积信息。
+"""
+const QuadGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSglr, Precision.FT)
+"""
+六面体边界四边形处理超奇异性高斯求积信息。
+"""
+const QuadGQInfoSSglr   =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSSglr, Precision.FT)
 
 """
-计算得到第ii个几何体的高斯求积坐标
-    该函数针对四边形， 输入值：
-vertices：  四边形角点坐标， MArray{Tuple{3, 3}, FT}
-ii      ：  索取第几个坐标
-GQMode  :   用于奇异积分时
-返回值  :  第ii个高斯求积点坐标, 类型为:SVector{3, FT}
+    getGQPQuad(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
+    getGQPQuad(quad::Quads4Hexa)
+
+计算 `quad` 正常求积的第 `i` 个或所有高斯求积坐标。
 """
-@inline function getGQPQuad(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
+function getGQPQuad(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
     @views @inbounds quad.vertices * QuadGQInfo.coordinate[:, ii]
 end
-
-"""
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
-"""
-@inline function getGQPQuad(quad::Quads4Hexa)
+function getGQPQuad(quad::Quads4Hexa)
     @views @inbounds quad.vertices * QuadGQInfo.coordinate
 end
 
-@inline function getGQPQuadSglr(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
+"""
+    getGQPQuadSglr(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
+    getGQPQuadSglr(quad::Quads4Hexa)
+
+计算 `quad` 处理奇异性的第 `i` 个或所有高斯求积坐标。
+"""
+function getGQPQuadSglr(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
     @views @inbounds quad.vertices * QuadGQInfoSglr.coordinate[:, ii]
 end
-
-""" 
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
-"""
-@inline function getGQPQuadSglr(quad::Quads4Hexa)
+function getGQPQuadSglr(quad::Quads4Hexa)
     @views @inbounds quad.vertices * QuadGQInfoSglr.coordinate
 end
 
-@inline function getGQPQuadSSglr(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
+"""
+    getGQPQuadSSglr(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
+    getGQPQuadSSglr(quad::Quads4Hexa)
+
+计算 `quad` 处理超奇异性的第 `i` 个或所有高斯求积坐标。
+"""
+function getGQPQuadSSglr(quad::Quads4Hexa, ii::IT) where {IT <: Integer}
     @views @inbounds quad.vertices * QuadGQInfoSSglr.coordinate[:, ii]
 end
-
-""" 
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
-"""
-@inline function getGQPQuadSSglr(quad::Quads4Hexa)
+function getGQPQuadSSglr(quad::Quads4Hexa)
     @views @inbounds quad.vertices * QuadGQInfoSSglr.coordinate
 end
