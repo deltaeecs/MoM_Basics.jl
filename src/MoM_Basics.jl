@@ -1,6 +1,6 @@
 module MoM_Basics
 
-using Dates, ProgressMeter, Printf
+using Dates, ProgressMeter, Printf, Reexport
 using StaticArrays, OffsetArrays, SparseArrays
 using LinearAlgebra, FastGaussQuadrature, Statistics
 using .Threads, ThreadsX
@@ -58,7 +58,7 @@ include("Recorder.jl")
 ## 各部分函数
 # 网格元高斯求积点、权重计算函数
 include("GaussQuadrature4Geos.jl")
-using .GaussQuadrature4Geo
+@reexport using .GaussQuadrature4Geo
 
 # 一些重要的要用到的基础类定义
 include("BasicStuff.jl")

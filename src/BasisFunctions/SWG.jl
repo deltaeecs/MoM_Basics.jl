@@ -1,11 +1,13 @@
 # 定义SWG基函数数据结构
 """
 SWG 基函数复合类型参数解释：
-isbd    :   是否为边界元即半基函数，布尔类型
-bfID   :   基函数编号，整形
-inGeo   :   基函数所在两个四面体编号（半基函数为1个，赋值成一样的两个），长度为2的向量数组
-inGeoID :   基函数在两个四面体中的局部编号（半基函数为1个，赋值成一样的两个），取值1:4，长度为2的向量数组
-center  :   面所在的三个点的中心，目前用途为在 Octree 中分组
+```
+isbd        ::Bool              是否为边界元即半基函数
+bfID        ::IT                基函数编号，整形
+inGeo       ::MVector{2, IT}    基函数所在两个四面体编号（半基函数为1个，赋值成一样的两个），长度为2的向量数组
+inGeoID     ::MVector{2, IT}    基函数在两个四面体中的局部编号（半基函数为1个，赋值成一样的两个），取值1:4，长度为2的向量数组
+center      ::MVec3D{FT}        基函数公共面中心，用于八叉树分组
+```
 """
 mutable struct SWG{IT<:Integer , FT<:AbstractFloat} <: LinearBasisFunction
     isbd        ::Bool
@@ -16,22 +18,25 @@ mutable struct SWG{IT<:Integer , FT<:AbstractFloat} <: LinearBasisFunction
 end
 
 """
-SWGbfstruct的默认构造函数，所有元素置零
+    SWG{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
+
+SWG 的默认构造函数，所有元素置零。
 """
 function SWG{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
     isbd      =    true
-    bfID     =    zero(IT)
+    bfID      =    zero(IT)
     inGeo     =    zero(MVector{2, IT})
     inGeoID   =    zero(MVector{2, IT})
     center    =    zero(MVec3D{FT})
     return SWG{IT, FT}(isbd, bfID, inGeo, inGeoID, center)
 end
-
 SWG()   =    SWG{IntDtype, Precision.FT}()
 
 
 """
-计算构成四面体的所有三角形，并写入四面体包含的四个三角形的id
+    setTriangles4Tetras!(tetrameshData::TetrahedraMesh{IT, FT}, tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, ::Val{:SWG}) where {IT, FT, CT}
+
+计算构成四面体的所有三角形，并将这些信息写入四面体 `tetrasInfo`，给 SWG 基函数赋值。
 """
 function setTriangles4Tetras!(tetrameshData::TetrahedraMesh{IT, FT}, tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, ::Val{:SWG}) where {IT, FT, CT}
     # 四面体数

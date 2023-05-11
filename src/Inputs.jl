@@ -1,11 +1,15 @@
 """
-用于输入频率参数，修改其它仿真参数的函数
-输入积分方程类型参数
+    inputBasicParameters(;frequency::FT = 1e8, ieT::Symbol = :EFIE, CFIEα::FT = 0.6,
+    meshfilename::String = SimulationParams.meshfilename) where {FT<:AbstractFloat}
+
+输入频率参数 `frequency`，修改其它仿真参数的函数；
+积分方程类型参数 `ieT`，修改计算过程中采用的积分方程；
+CFIE混合系数 `CFIEα`、网格文件名 `meshfilename`。
 """
-function inputBasicParameters(;frequency::FT = 1e8, ieT::Symbol = :EFIE, CFIEα::FT = 0.6,
+function inputBasicParameters(;frequency::FT = Params.frequency, ieT::Symbol = :EFIE, CFIEα::FT = 0.6,
     meshfilename::String = SimulationParams.meshfilename) where {FT<:AbstractFloat}
     # 设置 BLAS 的线程防止冲突
-    println("Program start with $(nthreads()) threads.")
+    @info "CEM_MoMs start with $(nthreads()) threads."
     BLAS.set_num_threads(nthreads())
     frequency::Precision.FT   =   frequency
     # 角频率
@@ -38,17 +42,22 @@ function inputBasicParameters(;frequency::FT = 1e8, ieT::Symbol = :EFIE, CFIEα:
 end
 
 """
-保存仿真参数到结果文件中
+    saveSimulationParams(;meshfilename::String = SimulationParams.meshfilename, 
+    sbfT::Symbol = SimulationParams.sbfT, vbfT::Symbol = SimulationParams.vbfT)
+
+保存仿真参数到结果文件中。
 """
 function saveSimulationParams(;meshfilename::String = SimulationParams.meshfilename, 
-    sbfT::Symbol = SimulationParams.sbfT, vbfT::Symbol = SimulationParams.vbfT)
+    sbfT::Symbol = SimulationParams.sbfT, vbfT::Symbol = SimulationParams.vbfT,
+    targetfile = "InputArgs.txt")
+    # 更新积分方程类型
     SimulationParams.sbfT = sbfT
     SimulationParams.vbfT = vbfT
     # 创建结果目录
     ~isdir(SimulationParams.resultDir) && mkpath(SimulationParams.resultDir)
 
     # 将输入信息保存到结果目录
-    open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
+    open(joinpath(SimulationParams.resultDir, targetfile), "a+")  do f
         @printf f "%19s\n" "仿真参数"
         @printf f "%-9s %24s\n" "输入文件" meshfilename
         @printf f "%-9s %24s\n" "仿真精度" Precision.FT

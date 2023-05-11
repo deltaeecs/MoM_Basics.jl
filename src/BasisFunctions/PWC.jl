@@ -1,11 +1,14 @@
 
 # 定义 PWC 基函数数据结构
 """
-PWC 基函数复合类型参数解释：
-isbd    :   是否为边界元即半基函数，布尔类型
-bfID   :   基函数编号，整形
-inGeo   :   基函数所在两个四面体编号（半基函数为1个，赋值成一样的两个），长度为2的向量数组
-center  :   面所在的三个点的中心，目前用途为在 Octree 中分组
+    PWC{IT<:Integer , FT<:AbstractFloat} <: ConstBasisFunction
+
+PWC 基函数复合类型：
+```
+bfID        ::IT            基函数编号
+inGeo       ::IT            基函数所在两个四面体编号
+center      ::MVec3D{FT}    基函数中心，用于八叉树分组
+```
 """
 mutable struct PWC{IT<:Integer , FT<:AbstractFloat} <: ConstBasisFunction
     bfID        ::IT
@@ -14,7 +17,9 @@ mutable struct PWC{IT<:Integer , FT<:AbstractFloat} <: ConstBasisFunction
 end
 
 """
-PWCbfstruct的默认构造函数，所有元素置零
+    PWC{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
+
+PWC 的默认构造函数，所有元素置零。
 """
 function PWC{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
     bfID        =    zero(IT)
@@ -22,12 +27,13 @@ function PWC{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
     center      =    zero(MVec3D{FT})
     return PWC{IT, FT}(bfID, inGeo, center)
 end
-
-PWC()   =    PWC{IntDtype, Precision.FT}()
+PWC() = PWC{IntDtype, Precision.FT}()
 
 
 """
-计算构成四面体的所有三角形，并写入四面体包含的四个三角形的id，给分片常数(PWC)基函数在赋值
+    setTriangles4Tetras!(tetrameshData::TetrahedraMesh{IT, FT}, tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, ::Val{:PWC}) where {IT, FT, CT}
+
+计算构成四面体的所有三角形，并将这些信息写入四面体 `tetrasInfo`，给分片常数 (PWC) 基函数赋值。
 """
 function setTriangles4Tetras!(tetrameshData::TetrahedraMesh{IT, FT}, tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, ::Val{:PWC}) where {IT, FT, CT}
     # 四面体数
@@ -190,12 +196,10 @@ function setTriangles4Tetras!(tetrameshData::TetrahedraMesh{IT, FT}, tetrasInfo:
 
 end
 
-
-
-
-
 """
-计算构成六面体的所有三角形，并写入六面体包含的六个四边形的id，给分片常数 (PWC) 基函数赋值
+    setQuad4Hexas!(hexameshData::HexahedraMesh{IT, FT}, hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}, ::Val{:PWC}) where {IT, FT, CT}
+
+计算构成六面体的所有四边形，并将这些信息写入六面体 `hexasInfo`，给分片常数 (PWC) 基函数赋值。
 """
 function setQuad4Hexas!(hexameshData::HexahedraMesh{IT, FT}, hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}, ::Val{:PWC}) where {IT, FT, CT}
     # 六面体数

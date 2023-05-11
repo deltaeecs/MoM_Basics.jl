@@ -1,17 +1,20 @@
 """
-磁偶极子天线类型\n
-属性：\n
-id      ::IT    编号\n
-Iml     ::CT    磁流线值\n
-V       ::FT    磁流线幅值
-phase   ::FT    相位\n
-orient  ::MVec3D{FT}  指向欧拉角\n
-centerlc::MVec3D{FT}  局部坐标下的中心位置\n
-centergb::MVec3D{FT}  全局坐标下的中心位置\n
-l2gMat  ::MMatrix{3, 3, FT, 9}  局部坐标到全局坐标的旋转变换矩阵\n
+    MagneticDipole{FT<: Real}<:AntennaType
+
+磁偶极子天线类型。
+```
+id      ::Integer               编号
+Iml     ::Complex{FT}           磁流线值
+V       ::FT                    磁流线幅值
+phase   ::FT                    相位
+orient  ::MVec3D{FT}            指向欧拉角
+centerlc::MVec3D{FT}            局部坐标下的中心位置
+centergb::MVec3D{FT}            全局坐标下的中心位置
+l2gRot  ::MMatrix{3, 3, FT, 9}  局部坐标到全局坐标的旋转变换矩阵
+```
 """
 mutable struct MagneticDipole{FT<: Real}<:AntennaType
-    id      ::Integer
+    id      ::Int
     Iml     ::Complex{FT}
     V       ::FT
     phase   ::FT
@@ -22,23 +25,27 @@ mutable struct MagneticDipole{FT<: Real}<:AntennaType
 end
 
 """
-磁偶极子天线默认构造函数
-id      ::IT    编号\n
-Iml     ::FT    磁流线值\n
-phase   ::FT    相位（输入弧度(rad)单位）\n
-orient  ::MVec3D{FT}  指向欧拉角\n
-centerlc::MVec3D{FT}  局部坐标下的中心位置\n
-centergb::MVec3D{FT}  全局坐标下的中心位置\n
-I0S     ::FT    电流环幅值 
+```
+    MagneticDipole{FT}(
+    id      ::Int32         =   zero(Int32);        # 编号
+    Iml     ::CT            =   zero(CT),           # 磁流线值
+    phase   ::FT            =   zero(FT),           # 相位（输入弧度(rad)单位）
+    orient  ::MVec3D{FT}    =   zero(MVec3D{FT}),   # 指向欧拉角
+    centerlc::MVec3D{FT}    =   zero(MVec3D{FT}),   # 局部坐标下的中心位置
+    centergb::MVec3D{FT}    =   zero(MVec3D{FT}),   # 全局坐标下的中心位置
+    I0S     ::FT            =   zero(FT),           # 电流环幅值
+    unit                    =   :rad    ) 
+    where{FT <: Real, CT <: Complex{FT}}
+```
 """
 function MagneticDipole{FT}(
-    id      ::Int32 =   zero(Int32);
-    Iml     ::CT    =   zero(CT),
+    id      ::IT    =   zero(Int32);
+    Iml     ::CT    =   zero(Complex{FT}),
     phase   ::FT    =   zero(FT),
     orient  ::MVec3D{FT}    =   zero(MVec3D{FT}),
     centerlc::MVec3D{FT}    =   zero(MVec3D{FT}),
     centergb::MVec3D{FT}    =   zero(MVec3D{FT}),
-    I0S     ::FT    =   zero(FT), unit = :rad) where{FT <: Real, CT <: Complex{FT}}
+    I0S     ::FT    =   zero(FT), unit = :rad) where{IT<:Integer, FT <: Real, CT <: Complex{FT}}
 
     ImlFTtemp   =   zero(FT)
     ## 根据输入的源同意计算Iml
@@ -68,26 +75,12 @@ function MagneticDipole{FT}(
     MagneticDipole{FT}(id, ImlCT, V, phase, orient, centerlc, centergb, l2gRot)
 
 end
+MagneticDipole(args...) = MagneticDipole{Precision.FT}(args...)
 
 """
-精度可变的 MagneticDipole 构造函数
-"""
-function MagneticDipole(id = 0; Iml = 0., phase = 0., orient = zero(MVec3D{Float32}), centerlc = zero(MVec3D{Float32}), centergb = zero(MVec3D{Float32}))
-    FT  =   Precision.FT
-    CT  =   Complex{FT}
-    id      ::Int32 =   id
-    Iml     ::FT    =   Iml
-    phase   ::FT    =   phase
-    orient  ::MVec3D{FT}    =   orient
-    centerlc::MVec3D{FT}    =   centerlc
-    centergb::MVec3D{FT}    =   centergb
-    ImlCT   =   CT(Iml*cos(phase), Iml*sin(phase))
+    update_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
 
-    MagneticDipole{FT}(id; Iml = ImlCT, phase=phase, orient=orient, centerlc=centerlc, centergb=centergb)
-end
-
-"""
-设置相位
+设置磁偶极 `md` 的相位为 `phase`。
 """
 function update_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
     # 当前幅值
@@ -99,7 +92,9 @@ function update_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
 end
 
 """
-附加相位
+    add_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
+
+为磁偶极 `md` 附加相位 `phase`。
 """
 function add_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
     # 当前幅值
@@ -112,10 +107,9 @@ end
 
 
 """
-更新指向
-md:: 偶极子
-orient::指向欧拉角（ZXZ）
-unit::单位（度(:deg)或弧度(rad)）
+    update_orient!(md::MagneticDipole{FT}, orient, unit = :rad) where {FT <: Real}
+
+更新磁偶极 `md` 指向为 `orient`。
 """
 function update_orient!(md::MagneticDipole{FT}, orient, unit = :rad) where {FT <: Real}
     # 更新指向
@@ -132,18 +126,38 @@ function update_orient!(md::MagneticDipole{FT}, orient, unit = :rad) where {FT <
     nothing
 end
 
+"""
+    sourceLocalEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
+
+计算磁偶极 `md` 在磁偶极局部坐标给定位置 `rvec` 处的电场。
+"""
+function sourceLocalEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
+    CT  =   Complex{FT}
+    # 笛卡尔坐标下的坐标值    r_xyz
+    # 判断坐标类型并计算赋值
+    r_coortype == :C ?  (r_xyz = r_observe) : (
+    r_coortype == :S ?  (r_xyz = sphere2cart(r_observe)) : throw("Error, 输入坐标只支持直角坐标：'C'，球坐标：'S'"))
+    
+    # 计算 天线 局部坐标（直角）的球坐标三角函数信息
+    sinθ, _, sinϕ, cosϕ  =   θϕInfofromCart(r_xyz)
+    # 局部坐标ϕ方向向量
+    ϕhat    =   SVec3D{FT}(-sinϕ, cosϕ, zero(FT))
+
+    # 场点距离缝隙天线距离
+    R_mn    =   norm(r_xyz)
+    divR_mn =   1/R_mn
+    # 局部坐标下电场的xyz三个分量
+    Eveclc  =  -md.Iml*greenfunc(R_mn)*div4π*(Params.JK_0 + divR_mn)*sinθ*ϕhat
+
+    return Eveclc
+end # function
 
 """
-给定点的电场计算函数,\n
-输入参数:\n
-r_observe   ::  Vec3D{FT}, 要计算的位置(局部坐标下),\n
-magnetDipole::MagneticDipole{FT}, 要计算的磁流源实例,\n
-必选参数\n
-r_coortype  ::  Char, 输入坐标类型: 直角坐标为符号： :C，球坐标： :S，默认为球坐标输入。\n
-返回值：\n
-电场值       ::  SVec3D{FT}\n
+    sourceEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
+
+计算磁偶极 `md` 在全局坐标下给定位置 `rvec` 处的电场。
 """
-function sourceEfield(magnetDipole::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
+function sourceEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
     CT  =   Complex{FT}
     # 笛卡尔坐标下的坐标值    r_xyz
     # 判断坐标类型并计算赋值
@@ -151,52 +165,59 @@ function sourceEfield(magnetDipole::MagneticDipole{FT}, r_observe::Vec3D{FT};  r
     r_coortype == :S ?  (r_xyz = sphere2cart(r_observe)) : throw("Error, 输入坐标只支持直角坐标：'C'，球坐标：'S'"))
     
     # r_xyz转换到 天线 局部坐标下
-    r_xyzlc =   globalrvec2Local(r_xyz, magnetDipole.l2gRot, magnetDipole.centergb)
+    r_xyzlc =   globalrvec2Local(r_xyz, md.l2gRot, md.centergb)
+    # 局部坐标下电场的xyz三个分量
+    Eveclc  =  sourceLocalEfield(md, r_xyzlc)
+    # 转换到全局坐标
+    Evecgb  =   localrvec2Global(Eveclc, md.l2gRot)
+
+    return Evecgb
+end # function
+
+"""
+    sourceLocalFarEfield(md::MagneticDipole{FT}, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
+
+计算磁偶极 `md` 在磁偶极局部坐标下给定方向 `r̂θϕ` 的远场电场。
+"""
+function sourceLocalFarEfield(md::MagneticDipole, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
+    CT  =   Complex{FT}
+    # 笛卡尔坐标下的坐标值
+    r_xyzlc =   r̂θϕ.r̂
+    # θϕ
+    θϕ = r̂θϕ.θϕ
+
+    # 局部坐标ϕ方向向量
+    ϕhat    =   r̂θϕ.ϕhat
+
+    # 局部坐标下电场的 ϕ 分量
+    re  =   @SVector [0, -md.Iml*div4π*(Params.JK_0)*θϕ.sinθ]
+
+    return re
+end # function
+
+
+"""
+    sourceFarEfield(md::MagneticDipole{FT}, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
+
+计算磁偶极 `md` 在全局坐标下给定方向 `r̂θϕ` 的远场电场。
+"""
+function sourceFarEfield(md::MagneticDipole, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
+    CT  =   Complex{FT}
+    # 笛卡尔坐标下的坐标值    r_xyz
+    # 判断坐标类型并计算赋值
+    r_xyz   =   r̂θϕ.r̂
+    # r_xyz转换到 天线 局部坐标下
+    r_xyzlc =   globalrvec2Local(r_xyz, md.l2gRot)
     
     # 计算 天线 局部坐标（直角）的球坐标三角函数信息
     sinθ, _, sinϕ, cosϕ  =   θϕInfofromCart(r_xyzlc)
     # 局部坐标ϕ方向向量
     ϕhat    =   SVec3D{FT}(-sinϕ, cosϕ, zero(FT))
 
-    # 场点距离缝隙天线距离
-    R_mn    =   norm(r_xyzlc)
-    divR_mn =   1/R_mn
     # 局部坐标下电场的xyz三个分量
-    Eveclc  =  -magnetDipole.Iml*greenfunc(R_mn)*div4π*(Params.JK_0 + divR_mn)*sinθ*ϕhat
+    Eveclc  =  -md.Iml*div4π*(Params.JK_0)*sinθ*ϕhat
     # 转换到全局坐标
-    Evecgb  =   localrvec2Global(Eveclc, magnetDipole.l2gRot)
-
-    return Evecgb
-end # function
-
-
-"""
-给定点的电场计算函数,\n
-输入参数:\n
-r_observe   ::  Vec3D{FT}, 要计算的位置(局部坐标下),\n
-magnetDipole::MagneticDipole{FT}, 要计算的磁流源实例,\n
-必选参数\n
-r_coortype  ::  Char, 输入坐标类型: 直角坐标为符号： :C，球坐标： :S，默认为球坐标输入。\n
-返回值：\n
-电场值       ::  SVec3D{FT}\n
-"""
-function sourceFarEfield(magnetDipole::MagneticDipole{FT}, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
-    CT  =   Complex{FT}
-    # 笛卡尔坐标下的坐标值    r_xyz
-    # 判断坐标类型并计算赋值
-    r_xyz   =   r̂θϕ.r̂
-    # r_xyz转换到 天线 局部坐标下
-    r_xyzlc =   globalrvec2Local(r_xyz, magnetDipole.l2gRot)
-    
-    # 计算 天线 局部坐标（直角）的球坐标三角函数信息
-    sinθ, cosθ, sinϕ, cosϕ  =   θϕInfofromCart(r_xyzlc)
-    # 局部坐标ϕ方向向量
-    ϕhat    =   SVec3D{FT}(-sinϕ, cosϕ, zero(FT))
-
-    # 局部坐标下电场的xyz三个分量
-    Eveclc  =  -magnetDipole.Iml*div4π*(Params.JK_0)*sinθ*ϕhat
-    # 转换到全局坐标
-    Evecgb  =   localrvec2Global(Eveclc, magnetDipole.l2gRot)
+    Evecgb  =   localrvec2Global(Eveclc, md.l2gRot)
     # 提取两个分量
     re  =   @SVector [r̂θϕ.θhat ⋅ Evecgb, r̂θϕ.ϕhat ⋅ Evecgb]
 
@@ -205,14 +226,9 @@ end # function
 
 
 """
-给定点的远场电场计算函数,\n
-输入参数:\n
-r_observe   ::  Vec3D{FT}, 要计算的位置(局部坐标下),\n
-sources     ::  Vector{ST}, 包含多个源实例的向量,\n
-必选参数\n
-r_coortype  ::  Char, 输入坐标类型: 直角坐标为符号： :C，球坐标： :S，默认为球坐标输入。\n
-返回值：\n
-电场值       ::  SVec3D{FT}\n
+    sourceFarEfield(sources::Vector{ST}, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real, ST<:ExcitingSource}
+
+计算源向量 `sources` 在全局坐标下给定方向 `r̂θϕ` 的远场电场。
 """
 function sourceFarEfield(sources::Vector{ST}, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real, ST<:ExcitingSource}
     θϕ = r̂θϕ.θϕ
@@ -225,14 +241,9 @@ function sourceFarEfield(sources::Vector{ST}, r̂θϕ::r̂θϕInfo{FT}) where {F
 end # function
 
 """
-给定点的电场计算函数,\n
-输入参数:\n
-r_observe   ::  Vec3D{FT}, 要计算的位置(局部坐标下),\n
-sources     ::  Vector{ST}, 包含多个源实例的向量,\n
-必选参数\n
-r_coortype  ::  Char, 输入坐标类型: 直角坐标为符号： :C，球坐标： :S，默认为球坐标输入。\n
-返回值：\n
-电场值       ::  SVec3D{FT}\n
+    sourceEfield(sources::Vector{ST}, rvec::AbstractVector{FT}) where {FT<:Real, ST<:ExcitingSource}
+
+计算源向量 `sources` 在全局坐标下给定位置 `rvec` 处的远场电场。
 """
 function sourceEfield(sources::Vector{ST}, rvec::AbstractVector{FT}) where {FT<:Real, ST<:ExcitingSource}
     re = zero(MVec3D{Complex{FT}})
@@ -244,17 +255,13 @@ end # function
 
 
 """
-磁偶极子的远场辐射积分计算函数，注意θϕ为偶极子的局部坐标
-L(θ, ϕ)
-输入参数:
-θϕ      ::θϕInfo{FT},   要计算的空间角度信息，对远场采用球坐标计算
-magnetDipole::MagneticDipole{FT}, 要计算的磁流源实例,\n
-返回值：
-电场值  ::MVector{2, FT}，在θ、ϕ方向的计算结果
+    radiationIntegralL0(md::MagneticDipole, θϕ::θϕInfo{FT}) where {FT<:Real}
+
+磁偶极子的远场辐射积分计算函数，注意 `θϕ` 为偶极子的局部坐标。
 """
-function radiationIntegralL0(θϕ::θϕInfo{FT}, magnetDipole::MagneticDipole{FT}) where {FT<:Real}
+function radiationIntegralL0(md::MagneticDipole, θϕ::θϕInfo{FT}) where {FT<:Real}
     # 结果
-    L_θ =  -magnetDipole.Iml*θϕ.sinθ
+    L_θ =  -md.Iml*θϕ.sinθ
     L_ϕ =   zero(FT)
     # 结果数组
     return SVector{2, FT}(L_θ, L_ϕ)
@@ -262,35 +269,40 @@ function radiationIntegralL0(θϕ::θϕInfo{FT}, magnetDipole::MagneticDipole{FT
 end # function
 
 
+@doc raw"""
+    radiationIntensityU_m(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:Real}
+
+计算磁流源的辐射强度函数
+``U_m(θ, ϕ) = \frac{Y_0}{8λ_0²}(|L_θ|² + |L_ϕ|²)``。
 """
-磁流源的辐射强度计算函数
-U_m(θ, ϕ) = Y_0/(8λ_0²)*(|L_θ|² + |L_ϕ|²)
-"""
-function radiationIntensityU_m(θϕ::θϕInfo{FT}, magnetDipole::MagneticDipole{FT}) where {FT<:Real}
+function radiationIntensityU_m(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:Real}
     # 先计算磁流源的辐射积分
-    local L = radiationIntegralL0(θϕ, magnetDipole)
+    local L = radiationIntegralL0(md, θϕ)
     # 再计算辐射强度
     return Y_0/(8*Params.λ_0^2)*(abs2(L[1]) + abs2(L[2]))
 end # function
 
-"""
-辐射功率计算函数
-P_rad = ∫∫  U(θ, ϕ)sinθ  dθdϕ
-对磁偶极子可直接在源缝表面积分：
-P_rad = ∫∫ |E(r)|²/(2η₀) dxdy
-    """
-radiationPower(magnetDipole::MagneticDipole{FT}) where {FT<:Real} = Y_0*π/(3*Params.λ_0^2)*abs2(magnetDipole.Iml)
+@doc raw"""
+    radiationPower(md::MagneticDipole{FT}) where {FT<:Real}
 
+计算辐射功率。
+``P_{rad} = ∫∫  U(θ, ϕ)sinθ  dθdϕ``
+对磁偶极子可直接在源缝表面积分：
+``P_{rad} = ∫∫ |E(r)|²/(2η₀) dxdy``
 """
-方向性系数
-D_m(θ, ϕ) = 4π U_m(θ, ϕ)/P_rad
+radiationPower(md::MagneticDipole) = Y_0*π/(3*Params.λ_0^2)*abs2(md.Iml)
+
+@doc raw"""
+radiationDirectionCoeff(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:Real}
+
+计算方向性系数：``D_m(θ, ϕ) = 4π U_m(θ, ϕ)/P_{rad}``。
 """
-function radiationDirectionCoeff(θϕ::θϕInfo{FT}, magnetDipole::MagneticDipole{FT}) where {FT<:Real}
+function radiationDirectionCoeff(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:Real}
     # 先计算磁流源的辐射强度
-    local U =   radiationIntensityU_m(θϕ, magnetDipole)
+    local U =   radiationIntensityU_m(md, θϕ)
     
     # P_rad 辐射功率计算
-    P_rad   =   radiationPower(magnetDipole)
+    P_rad   =   radiationPower(md)
 
     # 计算辐射方向性系数并返回
     return 4π*U/P_rad
