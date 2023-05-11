@@ -1,97 +1,49 @@
+@doc """
+    dist(pa::AbstractVector{FT}, pb::AbstractVector{FT})::FT where {FT<:AbstractFloat}
+    dist(pa::Vec3D{FT}, pb::Vec3D{FT})::FT where {FT<:AbstractFloat}
+    dist(pa::Vec3D{FT})::FT where {FT<:AbstractFloat}
+
+计算两点之间距离，比使用norm函数更高效。
 """
-计算两点之间距离，比使用norm函数更高效
-输入：
-pa, pb  :   Vec3D{FT}, 计算距离的两点
-返回：
-两点距离"""
-@inline function dist(pa::AbstractVector{FT}, pb::AbstractVector{FT})::FT where {FT<:AbstractFloat}
+function dist(pa::AbstractVector{FT}, pb::AbstractVector{FT})::FT where {FT<:AbstractFloat}
     @inbounds sqrt((pa[1]-pb[1])^2 + (pa[2]-pb[2])^2 + (pa[3]-pb[3])^2)
 end #function
-
-"""
-计算两点之间距离，比使用norm函数更高效
-输入：
-pa, pb  :   Vec3D{FT}, 计算距离的两点
-返回：
-两点距离"""
-@inline function dist(pa::Vec3D{FT}, pb::Vec3D{FT})::FT where {FT<:AbstractFloat}
+function dist(pa::Vec3D{FT}, pb::Vec3D{FT})::FT where {FT<:AbstractFloat}
     @inbounds sqrt((pa[1]-pb[1])^2 + (pa[2]-pb[2])^2 + (pa[3]-pb[3])^2)
 end #function
-
-"""
-计算点与原点之间距离，比使用norm函数更高效
-输入：
-pa:   Vec3D{FT}, 计算距离的点
-返回：
-两点距离"""
-@inline function dist(pa::Vec3D{FT})::FT where {FT<:AbstractFloat}
+function dist(pa::Vec3D{FT})::FT where {FT<:AbstractFloat}
     @inbounds sqrt(abs2(pa[1]) + abs2(pa[2]) + abs2(pa[3]))
 end #function
 
-"""
+@doc """
+    greenfunc(R::T) where {T<:AbstractFloat}
+    greenfunc(pa::Vec3D{T}, pb::Vec3D{T}) where {T<:AbstractFloat}
+    greenfunc(pa::AbstractVector{T}, pb::AbstractVector{T}) where {T<:AbstractFloat}
+    greenfunc(R::T, k::T) where {T<:AbstractFloat}
+    greenfunc(pa::Vec3D{T}, pb::Vec3D{T}, k::T) where {T<:AbstractFloat}
+
 计算归一化自由空间格林函数
-    g(R) =  exp(-1im*K_0*R)/R
-输入：
-R  :  FT, 距离变量
-返回：
-自由空间格林函数值
+``g(R) =  exp^{-1im*K_0*R}/R``
 """
-@inline function greenfunc(R::T) where {T<:AbstractFloat}
+function greenfunc(R::T) where {T<:AbstractFloat}
     exp(-Params.JK_0*R)/R
 end #function
-
-"""
-格林函数
-    g(R) = exp(-jkR)/R
-输入值：
-pa, pb  :   Vec3D{FT}, 用于计算R的两点
-k       :   FT 背景空间波矢，默认为自由空间的k_0。
-返回值，自由空间格林函数值
-"""
-@inline function greenfunc(pa::Vec3D{T}, pb::Vec3D{T}) where {T<:AbstractFloat}
+function greenfunc(pa::Vec3D{T}, pb::Vec3D{T}) where {T<:AbstractFloat}
     # 两点距离
     local R =   dist(pa, pb)
     # 格林函数
     return greenfunc(R)
 end
-
-"""
-格林函数
-    g(R) = exp(-jkR)/R
-输入值：
-pa, pb  :   AbstractVector{FT}, 用于计算R的两点
-k       :   FT 背景空间波矢，默认为自由空间的k_0。
-返回值，自由空间格林函数值
-"""
-@inline function greenfunc(pa::AbstractVector{T}, pb::AbstractVector{T}) where {T<:AbstractFloat}
+function greenfunc(pa::AbstractVector{T}, pb::AbstractVector{T}) where {T<:AbstractFloat}
     # 两点距离
     local R =   dist(pa, pb)
     # 格林函数
     return greenfunc(R)
 end
-
-
-"""
-计算媒质背景空间格林函数值
-    g(R) =  exp(-jkR)/R
-输入：
-R  :  FT, 距离变量
-返回：
-媒质背景空间格林函数值
-"""
-@inline function greenfunc(R::T, k::T) where {T<:AbstractFloat}
+function greenfunc(R::T, k::T) where {T<:AbstractFloat}
     exp(-im*k*R)/R
 end #function
-
-"""
-媒质背景空间格林函数值
-    g(R) = exp(-jkR)/R
-输入值：
-pa, pb  :   Vec3D{FT}, 用于计算R的两点
-k       :   FT 背景空间波矢，默认为自由空间的k_0。
-返回值，格林函数值
-"""
-@inline function greenfunc(pa::Vec3D{T}, pb::Vec3D{T}, k::T) where {T<:AbstractFloat}
+function greenfunc(pa::Vec3D{T}, pb::Vec3D{T}, k::T) where {T<:AbstractFloat}
     # 两点距离
     local R =   dist(pa, pb)
     # 格林函数
@@ -99,20 +51,21 @@ k       :   FT 背景空间波矢，默认为自由空间的k_0。
 end
 
 """
-计算 a × b × c = (c⋅a)b - (c⋅b)a
+    acrossbcrossc(a, b, c)
+
+更高效地计算矢量连续叉乘：``a × b × c = (c⋅a)b - (c⋅b)a``
 """
 acrossbcrossc(a, b, c) = b*(c⋅a) - a*(c⋅b)
 
 """
-向量在球坐标的分量
-"""
+    VecCart2SphereMat{T} <: FieldVector{3, Vec3D{T}}
 
-"""
-计算矢量坐标系（直角 → 球）转换矩阵
-属性：
-r_hat   ::  Vec3DCart{T} ， r 方向的单位向量
-θ_hat   ::  Vec3DCart{T} ， θ 方向的单位向量
-ϕ_hat   ::  Vec3DCart{T} ， ϕ 方向的单位向量
+矢量坐标系（直角 → 球）转换矩阵
+```
+r_hat   ::  Vec3DCart{T}    r 方向的单位向量
+θ_hat   ::  Vec3DCart{T}    θ 方向的单位向量
+ϕ_hat   ::  Vec3DCart{T}    ϕ 方向的单位向量
+```
 """
 struct VecCart2SphereMat{T} <: FieldVector{3, Vec3D{T}}
     r_hat   ::Vec3D{T} 
@@ -129,7 +82,9 @@ end # struct
 
 
 """
-VecCart2SphereMat在给定θ、ϕ方向的构造函数
+    VecCart2SphereMat{FT}(θϕ::θϕInfo{FT}) where{FT<:AbstractFloat}
+
+`VecCart2SphereMat`在给定方向 `θϕ` 的构造函数。
 """
 function VecCart2SphereMat{FT}(θϕ::θϕInfo{FT}) where{FT<:AbstractFloat}
     # 先分解角度相关信息
@@ -145,22 +100,19 @@ function VecCart2SphereMat{FT}(θϕ::θϕInfo{FT}) where{FT<:AbstractFloat}
 end # function
 
 """
+    Base.:*(c2smat::VecCart2SphereMat{FT}, vec3D::Vec3D{T}) where {T<:Number, FT<:AbstractFloat}
+
 重载 * 函数以计算向量在球坐标下的各个分量
 """
 function Base.:*(c2smat::VecCart2SphereMat{FT}, vec3D::Vec3D{T}) where {T<:Number, FT<:AbstractFloat}
     MVec3D{T}(c2smat.r_hat ⋅ vec3D, c2smat.θ_hat ⋅ vec3D, c2smat.ϕ_hat ⋅ vec3D)
 end
 
-"""
-计算矢量坐标系（直角 → 球）转换矩阵
-输入参数
-θϕ  ::  θϕInfo{FT}
-属性：
-mat     ::  MMatrix{3, 3, FT}
-三行分别为
-r 方向的单位向量
-θ 方向的单位向量
-ϕ 方向的单位向量
+@doc """
+    cart2sphereMat(θϕ::θϕInfo{FT}) where{FT<:Real}
+    cart2sphereMat(θ::FT, ϕ::FT) where{FT<:Real}
+
+计算矢量坐标系（直角 → 球）转换矩阵。
 """
 function cart2sphereMat(θϕ::θϕInfo{FT}) where{FT<:Real}
     # 分解角度相关信息
@@ -169,21 +121,8 @@ function cart2sphereMat(θϕ::θϕInfo{FT}) where{FT<:Real}
     mat = MMatrix{3, 3, FT}([   sinθ*cosϕ  sinθ*sinϕ   cosθ     ; 
                                 cosθ*cosϕ  cosθ*sinϕ  -sinθ     ;
                                     -sinϕ       cosϕ   zero(FT)  ])
-
     return mat
 end
-
-"""
-计算矢量坐标系（直角 → 球）转换矩阵
-属性：
-θ::FT
-ϕ::FT
-mat     ::  MMatrix{3, 3, FT}
-三行分别为
-r 方向的单位向量
-θ 方向的单位向量
-ϕ 方向的单位向量
-"""
 function cart2sphereMat(θ::FT, ϕ::FT) where{FT<:Real}
     # 计算θϕInfo
     θϕ  =   θϕInfo{FT}(θ, ϕ)
@@ -192,7 +131,9 @@ function cart2sphereMat(θ::FT, ϕ::FT) where{FT<:Real}
 end
 
 """
-计算给定欧拉角局部坐标 z' 轴在全局坐标中的位置单位向量
+    eulerZunit(α::FT, β::FT, γ::FT, unit::Symbol) where{FT<:Real}
+
+计算给定欧拉角局部坐标 `z` 轴在全局坐标中的位置单位向量。
 """
 function eulerZunit(α::FT, β::FT, γ::FT, unit::Symbol) where{FT<:Real}
     # 角度信息转换到弧度 rad
@@ -223,7 +164,7 @@ end
 “滚动” → “俯仰” → “偏航”，
 即按绕 “z轴” → “x轴” → “z轴”的顺序，分别旋转
 α, β, γ 度
-[https://en.wikipedia.org/wiki/Euler_angles]
+[Wikipedia-Euler_angles](https://en.wikipedia.org/wiki/Euler_angles)
 输入：
 α, β, γ, 旋转角度信息
 unit: 输入角度值单位，默认为 :rad，可选 :deg
@@ -255,10 +196,9 @@ end
 
 
 """
-函数计算天线阵按给定任意轴 (axisx, axisy, axisz), 旋转 θ 角度
-输出：
-rotMat :: SMatrix{3, 3, FT}, 坐标旋转矩阵
-rotMat * vec 将 vec 从局部坐标转换回全局坐标
+    eulerRotationMat(axis::Vec3D{FT}, θ::FT, unit::Symbol) where{FT<:Real}
+
+计算天线阵按给定任意轴 `axis`, 旋转 `θ`` 角度的旋转矩阵。
 """
 function eulerRotationMat(axis::Vec3D{FT}, θ::FT, unit::Symbol) where{FT<:Real}
 
@@ -275,10 +215,9 @@ function eulerRotationMat(axis::Vec3D{FT}, θ::FT, unit::Symbol) where{FT<:Real}
 end
 
 """
-函数计算天线转到给定指向的旋转矩阵，旋转一步到位，不发生自旋, 旋转到 θ, ϕ 角度
-输出：
-rotMat :: SMatrix{3, 3, FT}, 坐标旋转矩阵
-rotMat * vec 将 vec 从局部坐标转换回全局坐标
+    eulerRotationMat(θ::FT, ϕ::FT, unit::Symbol) where{FT<:AbstractFloat}
+
+计算转到给定指向 `θ, ϕ` 处的旋转矩阵，旋转一步到位，不发生自旋。
 """
 function eulerRotationMat(θ::FT, ϕ::FT, unit::Symbol) where{FT<:AbstractFloat}
 
@@ -304,9 +243,11 @@ end
 
 
 """
-通过局部坐标到全局坐标的旋转矩阵计算欧拉角
+    eulerRMat2αβγ(l2gMat)
+
+通过局部坐标到全局坐标的旋转矩阵 `l2gMat` 计算欧拉角。
 旋转矩阵按绕 “z轴” → “x轴” → “z轴”的顺序，分别旋转
-α, β, γ 度得到，本函数计算对应的三个角度
+`α, β, γ` 度得到，本函数计算对应的三个角度 `α, β, γ`。
 """
 function eulerRMat2αβγ(l2gMat)
     # 计算局部 ẑ 在全局坐标的位置
@@ -330,21 +271,27 @@ function eulerRMat2αβγ(l2gMat)
     return α, β, γ
 end
 
-
 const divπ = 1/π
 """
-Julia自带sinc函数计算的是归一化辛格函数:\n
-`sinc(x)     =   sin(πx)/(πx)`\n
-此处借用sinc，定义数学领域的非归一化sinc函数，即计算:\n
-`sin(x)/x`\n
+    sincmath(x::T) where{T<:Number}
+
+Julia 自带 [sinc](@ref Base.sinc) 函数计算的是归一化辛格函数:
+
+``sinc(x)     =   sin(πx)/(πx)``
+
+此处借用 `sinc`，定义数学领域的非归一化 sinc 函数，即计算:
+
+``sin(x)/x``
+
 """
 sincmath(x::T) where{T<:Number} = sinc(x*divπ)
 
-"""
-坐标转换函数.
-球坐标 → 直角坐标
-输入值：
-coor_sphere ::Vec3D{FT} 球坐标向量
+@doc """
+    sphere2cart(coor_sphere::Vec3D{T}) where T<:Real
+    sphere2cart(coor_sphere...)
+    sphere2cart(r::T, θϕ::θϕInfo{T}) where T<:Real
+
+将球坐标 `coor_sphere` 转换到直角坐标。
 """
 function sphere2cart(coor_sphere::Vec3D{T}) where T<:Real
     # 球坐标下的一些量
@@ -354,24 +301,9 @@ function sphere2cart(coor_sphere::Vec3D{T}) where T<:Real
     # 计算结果并返回
     return  MVec3D{T}(r*sinθ*cosϕ, r*sinθ*sinϕ, r*cosθ)
 end
-
-"""
-坐标转换函数.
-球坐标 → 直角坐标
-输入值：
-coor_sphere ::MVec3D{FT} 球坐标向量
-"""
 function sphere2cart(coor_sphere...)
     sphere2cart(convert(SVec3D{mapreduce(typeof, promote_type, coor_sphere)}, coor_sphere))
 end
-
-"""
-坐标转换函数.
-球坐标 → 直角坐标
-输入值：
-r   ::FT, 球坐标r值
-θϕ  ::θϕInfo{FT} 球坐标向量
-"""
 function sphere2cart(r::T, θϕ::θϕInfo{T}) where T<:Real
     # 先分解角度相关信息
     local sinθ, cosθ, sinϕ, cosϕ = θϕ.sinθ, θϕ.cosθ, θϕ.sinϕ, θϕ.cosϕ
@@ -379,11 +311,10 @@ function sphere2cart(r::T, θϕ::θϕInfo{T}) where T<:Real
     return  MSVec3D{T}(r*sinθ*cosϕ, r*sinθ*sinϕ, r*cosθ)
 end
 
-"""
-坐标转换函数.
-直角坐标 → 球坐标
-输入值：
-xyz ::Vec3D{FT} 球坐标向量
+@doc """
+    cart2sphere(xyz::Vararg{T, 3}) where {T}
+
+将直角坐标 `xyz` 转换到球坐标。
 """
 function cart2sphere(xyz::Vararg{T, 3}) where {T}
     # 直角坐标下的一些量
@@ -399,13 +330,14 @@ function cart2sphere(xyz::Vararg{T, 3}) where {T}
     # 计算结果并返回
     return  MVec3D{typeof(r)}(r, θ, ϕ)
 end
-
 function cart2sphere(xyz::AbstractVector)
     cart2sphere(xyz...)
 end
 
 """
-在球面生成随机向量
+    random_rhat(; FT = Precision.FT)
+
+随机生成单位向量。
 """
 function random_rhat(; FT = Precision.FT)
     x, y, z = let x::FT, y::FT, z::FT, r::FT

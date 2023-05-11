@@ -10,7 +10,7 @@ include("TaylorWins.jl")
     AntennaArray{FT<:Real, AT, N} <: AbstractAntennaArray
 
 机扫阵列天线 (mechanically scanned array, MSA)、相控阵 (Phased Array)阵列天线
-orient 采用的是欧拉角，参考['eulerRotationMat'](@ref)
+orient 采用的是欧拉角，参考[`eulerRotationMat`](@ref)
 注意阵列初始指向由提供的天线单元合成，作为阵列只提供指向旋转。
 """
 Base.@kwdef mutable struct AntennaArray{FT<:Real, AT, N} <: AbstractAntennaArray
@@ -39,7 +39,7 @@ distance(arys)  =   norm(first(arys)[2].centergb - first(arys)[1].centergb)
     antennaArray(arysize, aryorient, dgap = Tuple(fill(Params.λ_0/2, length(arysize)));
     sourceConstructer, sourceT, sourceorientlc, orientunit, coefftype = :uniform, arycenter = zero(MVec3D{Precision.FT}))
 
-提供快捷的阵列构建函数。注意此处输入的阵列、单元指向必须为指定的欧拉角 (ZXZ) ['eulerRotationMat'](@ref)。
+提供快捷的阵列构建函数。注意此处输入的阵列、单元指向必须为指定的欧拉角 (ZXZ) [`eulerRotationMat`](@ref)。
 """
 function antennaArray(arysize, aryorient, dgap = Tuple(fill(Params.λ_0/2, length(arysize)));
     sourceConstructer, sourceT, sourceorientlc, orientunit, coefftype = :uniform, arycenter = zero(MVec3D{Precision.FT}))
