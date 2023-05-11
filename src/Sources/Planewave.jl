@@ -1,16 +1,22 @@
 
 """
-平面波源，定义在局部坐标下，与球坐标下的单位向量存在如下关系
-θhat_source =   - θhat
-K̂_v         =   - r̂
-包含如下信息、
-θ   ::FT    ，入射球坐标角度θ
-ϕ   ::FT    ，入射球坐标角度ϕ
-α   ::FT    ，入射波极化方向相对于 θhat_source 绕K̂_v旋转的角度
-f   ::FT    ，入射波频率
-V   ::FT    ，入射波激励幅度
-E_v ::SVec3D{FT}    ，入射波电场极化矢量
-k̂   ::SVec3D{FT}    ，入射波波矢向量
+    PlaneWave{FT<:Real}<:ExcitingSource
+
+平面波源：
+```
+θ   ::FT            球坐标角度θ
+ϕ   ::FT            球坐标角度ϕ
+α   ::FT            波极化方向相对于 θhat_source 绕K̂_v旋转的角度
+f   ::FT            波频率
+V   ::FT            波激励幅度
+E_v ::SVec3D{FT}    入射波电场极化矢量
+k̂   ::SVec3D{FT}    入射波波矢向量
+```
+
+默认构造函数：
+```julia
+PlaneWave{FT}(θ::FT, ϕ::FT, α::FT, V::FT = one(FT))
+```
 """
 struct PlaneWave{FT<:Real}<:ExcitingSource
 
@@ -22,18 +28,6 @@ struct PlaneWave{FT<:Real}<:ExcitingSource
     E_v ::SVec3D{FT}
     k̂   ::SVec3D{FT}
     
-    """
-    默认构造函数
-    输入
-    θ   ::FT
-    ϕ   ::FT
-    α   ::FT
-    f   ::FT
-    V   ::FT
-    计算
-    E_v ::SVec3D{FT}
-    k̂   ::SVec3D{FT}
-    """
     function PlaneWave{FT}(θ::FT, ϕ::FT, α::FT, V::FT = one(FT)) where{FT<:Real}
         # 角度信息
         θϕ      =   θϕInfo{FT}(θ, ϕ)
@@ -51,8 +45,10 @@ struct PlaneWave{FT<:Real}<:ExcitingSource
 
 end
 
-"""
-类型自动转换的构造函数
+@doc """
+    PlaneWave{FT}(θ, ϕ, α, V = one(FT)) where {FT}
+
+类型自动转换的 `PlaneWave` 构造函数。
 """
 function PlaneWave{FT}(θ, ϕ, α, V = one(FT)) where {FT}
     θ::FT = θ
@@ -61,39 +57,22 @@ function PlaneWave{FT}(θ, ϕ, α, V = one(FT)) where {FT}
     V::FT = V
     PlaneWave{FT}(θ::FT, ϕ::FT, α::FT, V::FT)
 end
+PlaneWave(args...) = PlaneWave{Precision.FT}(args...) 
 
+@doc """
+    sourceEfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+
+计算平面波 `plw` 在全局坐标下给定位置 `r` 处的电场。
 """
-类型自动转换的构造函数
-"""
-function PlaneWave(θ, ϕ, α, V = 1)
-    FT = Precision.FT
-    θ::FT = θ
-    ϕ::FT = ϕ
-    α::FT = α
-    V::FT = V
-    PlaneWave{FT}(θ::FT, ϕ::FT, α::FT, V::FT)
+function sourceEfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+    plw.E_v*exp(-Params.JK_0*(plw.k̂ ⋅ r))
 end
 
-"""
-平面波源的空间r点的电场 E 计算函数
-输入信息：
-source  ::PlaneWave{FT}
-r       ::Vec3D{FT}
-返回值
-E       ::Vec3D{Complex{FT}}
-"""
-@inline function sourceEfield(source::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
-    source.E_v*exp(-Params.JK_0*(source.k̂ ⋅ r))
-end
+@doc """
+    sourceHfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
 
+计算平面波 `plw` 在全局坐标下给定位置 `r` 处的磁场。
 """
-平面波源的空间r点的磁场 H 计算函数
-输入信息：
-source  ::PlaneWave{FT}
-r       ::Vec3D{FT}
-返回值
-E       ::Vec3D{Complex{FT}}
-"""
-@inline function sourceHfield(source::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
-    1/η_0*(source.k̂ × sourceEfield(source, r))
+@inline function sourceHfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+    1/η_0*(plw.k̂ × sourceEfield(plw, r))
 end

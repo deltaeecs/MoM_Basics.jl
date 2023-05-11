@@ -1,10 +1,14 @@
 """
-屋顶基函数 (Rooftop basis function, RBF) 基函数复合类型参数解释：
-isbd    :   是否为边界元即半基函数，布尔类型
-bfID   :   基函数编号，整形
-inGeo   :   基函数所在两个六面体编号（半基函数为1个，赋值成一样的两个），长度为2的向量数组
-inGeoID :   基函数在两个六面体中的局部编号（半基函数为1个，赋值成一样的两个），取值1:4，长度为2的向量数组
-center  :   面所在的三个点的中心，目前用途为在 Octree 中分组
+    RBF{IT<:Integer , FT<:AbstractFloat} <: LinearBasisFunction
+
+屋顶基函数 (Rooftop basis function, RBF) 基函数复合类型：
+```
+isbd        ::Bool              是否为边界元即半基函数，布尔类型
+bfID        ::IT                基函数编号，整形
+inGeo       ::MVector{2, IT}    基函数所在两个六面体编号（半基函数为1个，赋值成一样的两个），长度为2的向量数组
+inGeoID     ::MVector{2, IT}    基函数在两个六面体中的局部编号（半基函数为1个，赋值成一样的两个），取值1:4，长度为2的向量数组
+center      ::MVec3D{FT}        基函数中心，用于八叉树分组
+```
 """
 mutable struct RBF{IT<:Integer , FT<:AbstractFloat} <: LinearBasisFunction
     isbd        ::Bool
@@ -15,7 +19,9 @@ mutable struct RBF{IT<:Integer , FT<:AbstractFloat} <: LinearBasisFunction
 end
 
 """
-SWGbfstruct的默认构造函数，所有元素置零
+    RBF{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
+
+RBF 的默认构造函数，所有元素置零。
 """
 function RBF{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
     isbd        =    true
@@ -25,11 +31,16 @@ function RBF{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
     center      =    zero(MVec3D{FT})
     return RBF{IT, FT}(isbd, bfID, inGeo, inGeoID, center)
 end
-
 RBF()   =    RBF{IntDtype, Precision.FT}()
 
-"""
-重载面的提取顺序以匹配 屋顶基函数 在六面体中的面 按 u=1, u=0, v = 1, v = 0, w = 1, w = 0 的顺序排列
+@doc raw"""
+    boundaryRBF(h::Hexahedron)
+
+重载面的提取顺序以匹配屋顶基函数 (RBF) 在六面体中的面按 
+```math
+u=1, u=0, v = 1, v = 0, w = 1, w = 0 
+```
+的顺序排列。
 """
 function boundaryRBF(h::Hexahedron)
     indices = [ (2,3,7,6),(1,4,8,5),(4,3,7,8),
@@ -39,7 +50,9 @@ end
 
 
 """
-计算构成六面体的所有四边形，并写入六面体包含的四个四边形的id
+    setQuad4Hexas!(hexameshData::HexahedraMesh{IT, FT}, hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}, ::Val{:RBF}) where {IT, FT, CT}
+
+计算构成六面体的所有四边形，并写入六面体 `hexasInfo`，给屋顶基函数 (RBF) 基函数赋值。
 """
 function setQuad4Hexas!(hexameshData::HexahedraMesh{IT, FT}, hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}, ::Val{:RBF}) where {IT, FT, CT}
     # 六面体数
@@ -219,6 +232,9 @@ const facesVertIDs  =   @SMatrix [  2  1  4  1  5  1;
                                     3  4  3  2  6  2;
                                     7  8  7  6  7  3;
                                     6  5  8  5  8  4]
+"""
+六面体的六个面的对面
+"""
 const facen2OppositeID  =   @SVector [2, 1, 4, 3, 6, 5]
 
 """
@@ -228,38 +244,50 @@ const oppFacesVertIDs   =   facesVertIDs[:, facen2OppositeID]
 
 
 """
-得到第 i 个面所在的基函数的 “所有” 的 “自由端( r₀ )”
-该面定义为 uvw 坐标中某值为 1(0) 的面
-自由端应定义为在该面的 uvw 坐标中，将该值赋值为 0(1) 时计算得到的点
-如 u = 1 的面为六面体的 (2,6,7,3) 点构成的面，r₀ 为 uvw 坐标为 (0, v, w) 的点
-此点等同于 u = 0 的面的四边形的参数坐标为 (v, w) 的点 
-在构造 RBF 时面按照 按 u=1, u=0, v = 1, v = 0, w = 1, w = 0 的顺序排列, 
-因此函数根据输入的面的 id 进行计算
+    getFreeVns(hexa::HexahedraInfo, i::Integer)
 
-输入::
-hexa    六面体信息
-::i 第 i 个面的参数类型
+得到六面体 `hexa` 第 `i` 个所在的基函数的 所有自由端( ``r₀`` )。
+该面定义为 ``uvw`` 坐标中某值为 ``1(0)`` 的面，
+自由端应定义为在该面的 ``uvw`` 坐标中，将该值赋值为 ``0(1)`` 时计算得到的点
+如 ``u = 1`` 的面为六面体的第 ``(2,6,7,3)`` 个点构成的面，``r₀`` 为 ``uvw`` 
+坐标为 ``(0, v, w)`` 的点，此点等同于 ``u = 0`` 的面的四边形的参数坐标为 (v, w) 的点 
+在构造 RBF 时面按照 按 ``u=1, u=0, v = 1, v = 0, w = 1, w = 0`` 的顺序排列, 
+因此函数根据输入的面的序号进行计算。
 """
-function getFreeVns(hexa::HexahedraInfo, fid::Integer)
+function getFreeVns(hexa::HexahedraInfo, i::Integer)
     # 对面的四个点
-    @views @inbounds vertices = hexa.vertices[:, oppFacesVertIDs[:, fid]]
+    @views @inbounds vertices = hexa.vertices[:, oppFacesVertIDs[:, i]]
     vertices * QuadGQInfo.coordinate
 end
 
-function getFreeVnsSglr(hexa::HexahedraInfo, fid::Integer)
+"""
+    getFreeVns(hexa::HexahedraInfo, i::Integer)
+
+得到六面体 `hexa` 处理奇异性时第 `i` 个所在的基函数的 所有自由端( ``r₀`` )。
+定义详见[`getFreeVns`](@ref)
+"""
+function getFreeVnsSglr(hexa::HexahedraInfo, i::Integer)
     # 对面的四个点
-    @views @inbounds vertices = hexa.vertices[:, oppFacesVertIDs[:, fid]]
+    @views @inbounds vertices = hexa.vertices[:, oppFacesVertIDs[:, i]]
     vertices * QuadGQInfoSglr.coordinate
 end
 
-function getFreeVnsSSglr(hexa::HexahedraInfo, fid::Integer)
+"""
+    getFreeVnsSSglr(hexa::HexahedraInfo, i::Integer)
+
+得到六面体 `hexa` 处理超奇异性时第 `i` 个所在的基函数的 所有自由端( ``r₀`` )。
+定义详见[`getFreeVns`](@ref)
+"""
+function getFreeVnsSSglr(hexa::HexahedraInfo, i::Integer)
     # 对面的四个点
-    @views @inbounds vertices = hexa.vertices[:, oppFacesVertIDs[:, fid]]
+    @views @inbounds vertices = hexa.vertices[:, oppFacesVertIDs[:, i]]
     vertices * QuadGQInfoSSglr.coordinate
 end
 
 
 """
+    constructFloat2IndexDict(floats::AbstractVector{FT}) where {FT<:AbstractFloat}
+
 构建有序（从小到大）浮点数为键，值为该组数构成的的二重字典，字典值为键的二维数组的线性坐标
 """
 function constructFloat2IndexDict(floats::AbstractVector{FT}) where {FT<:AbstractFloat}
@@ -280,8 +308,8 @@ function constructFloat2IndexDict(floats::AbstractVector{FT}) where {FT<:Abstrac
     re
 end
 
-"""
-构建从四边形的 uv 坐标映射到 自由端的 id
+@doc """
+从四边形的 ``uv`` 坐标映射到 自由端的 id
 """
 const uv2FreeVnsDict      =   constructFloat2IndexDict(unique(HexaGQInfo.uvw))
 const uv2FreeVnsSglrDict  =   constructFloat2IndexDict(unique(HexaGQInfoSglr.uvw))
@@ -289,66 +317,60 @@ const uv2FreeVnsSSglrDict =   constructFloat2IndexDict(unique(HexaGQInfoSSglr.uv
 
 
 """
-得到第 i 个面所在的基函数的非奇异下的 “自由端( r₀ )” 的id
-输入::
-uvw     当前的 uvw 坐标
-::i 第 i 个面的参数类型
-返回:: uvw 对应地第 i 个面的自由端(非奇异)的 id
+    selectFreeVnID(uvw::AbstractVector{FT}, i::Integer) where {FT}
+
+根据 ``uvw`` 计算得到第 i 个面所在的基函数的 正常高斯求积 时 “自由端( ``r₀`` )” 的序号。
 """
-function selectFreeVnID(uvw::AbstractVector{FT}, fid::Integer) where {FT}
+function selectFreeVnID(uvw::AbstractVector{FT}, i::Integer) where {FT}
     @views @inbounds re = begin
-        if (fid == 1) || (fid == 2)
+        if (i == 1) || (i == 2)
             uv2FreeVnsDict[uvw[2]][uvw[3]]
-        elseif (fid == 3) || (fid == 4)
+        elseif (i == 3) || (i == 4)
             uv2FreeVnsDict[uvw[3]][uvw[1]]
-        elseif (fid == 5) || (fid == 6)
+        elseif (i == 5) || (i == 6)
             uv2FreeVnsDict[uvw[1]][uvw[2]]
         else
-            throw("Only 6 fances, $fid is a inproper index.")
+            throw("Only 6 faces, $i is a inproper index.")
         end
     end
     return re
 end
 
 """
-得到第 i 个面所在的基函数的 奇异处理 下的 “自由端( r₀ )” 的id
-输入::
-uvw     当前的 uvw 坐标
-::i 第 i 个面的参数类型
-返回:: uvw 对应地第 i 个面的自由端(奇异)的 id
+    selectFreeVnSglrID(uvw::AbstractVector{FT}, i::Integer) where {FT}
+
+根据 ``uvw`` 得到第 i 个面所在的基函数的 处理奇异性 求积时 “自由端( ``r₀`` )” 的序号。
 """
-function selectFreeVnSglrID(uvw::AbstractVector{FT}, fid::Integer) where {FT}
+function selectFreeVnSglrID(uvw::AbstractVector{FT}, i::Integer) where {FT}
     @inbounds re = begin
-        if (fid == 1) || (fid == 2)
+        if (i == 1) || (i == 2)
             uv2FreeVnsSglrDict[uvw[2]][uvw[3]]
-        elseif (fid == 3) || (fid == 4)
+        elseif (i == 3) || (i == 4)
             uv2FreeVnsSglrDict[uvw[3]][uvw[1]]
-        elseif (fid == 5) || (fid == 6)
+        elseif (i == 5) || (i == 6)
             uv2FreeVnsSglrDict[uvw[1]][uvw[2]]
         else
-            throw("Only 6 fances, $fid is a inproper index.")
+            throw("Only 6 faces, $i is a inproper index.")
         end
     end
     re
 end
 
 """
-得到第 i 个面所在的基函数的 超奇异处理 下的 “自由端( r₀ )” 的id
-输入::
-uvw     当前的 uvw 坐标
-::i 第 i 个面的参数类型
-返回:: uvw 对应地第 i 个面的自由端(超奇异)的 id
+    selectFreeVnSSglrID(uvw::AbstractVector{FT}, i::Integer) where {FT}
+
+根据 ``uvw`` 得到第 i 个面所在的基函数的 处理超奇异性 求积时 “自由端( ``r₀`` )” 的序号。
 """
-function selectFreeVnSSglrID(uvw::AbstractVector{FT}, fid::Integer) where {FT}
+function selectFreeVnSSglrID(uvw::AbstractVector{FT}, i::Integer) where {FT}
     @inbounds re = begin
-        if (fid == 1) || (fid == 2)
+        if (i == 1) || (i == 2)
             uv2FreeVnsSSglrDict[uvw[2]][uvw[3]]
-        elseif (fid == 3) || (fid == 4)
+        elseif (i == 3) || (i == 4)
             uv2FreeVnsSSglrDict[uvw[3]][uvw[1]]
-        elseif (fid == 5) || (fid == 6)
+        elseif (i == 5) || (i == 6)
             uv2FreeVnsSSglrDict[uvw[1]][uvw[2]]
         else
-            throw("Only 6 fances, $fid is a inproper index.")
+            throw("Only 6 faces, $i is a inproper index.")
         end
     end
     re
@@ -356,7 +378,9 @@ end
 
 
 """
-构建从六面体体高斯求积点线性索引到三维索引的数组
+    constructGQ1DID2GQ3DIDVector(gqInfo)
+
+构建从六面体体高斯求积点线性索引到三维索引的数组。
 """
 function constructGQ1DID2GQ3DIDVector(gqInfo)
     # 求积点坐标
@@ -364,7 +388,7 @@ function constructGQ1DID2GQ3DIDVector(gqInfo)
     # 求积点 单个维度上的数量
     gqN1D   =   length(uvwunique)
     # 生成
-    [(i, j, k) for i in 1:gqN1D, j in 1:gqN1D, k in 1:gqN1D][:]
+    return reshape([(i, j, k) for i in 1:gqN1D, j in 1:gqN1D, k in 1:gqN1D], :)
 end
 
 
@@ -376,66 +400,60 @@ const GQ1DID2GQ3DIDVectorSglr  =   constructGQ1DID2GQ3DIDVector(HexaGQInfoSglr)
 const GQ1DID2GQ3DIDVectorSSglr =   constructGQ1DID2GQ3DIDVector(HexaGQInfoSSglr)
 
 """
-得到第 i 个面所在的基函数的 奇异处理 下的 “自由端( r₀ )” 的id
-输入::
-uvw     当前的 uvw 坐标
-::i 第 i 个面的参数类型
-返回:: uvw 对应地第 i 个面的自由端(奇异)的 id
+    getFreeVIDFromGQ3DID(GQ3DID::NTuple{3, Int}, i::Integer)
+
+得到第 i 个面所在的基函数的 正常高斯求积 下，三维坐标为 `GQ3DID` 的高斯求积点的 “自由端``r₀``” 的序号。
 """
-function getFreeVIDFromGQ3DID(GQ3DID::NTuple{3, Int}, fid::Integer)
+function getFreeVIDFromGQ3DID(GQ3DID::NTuple{3, Int}, i::Integer)
     @inbounds re = begin
-        if (fid == 1) || (fid == 2)
+        if (i == 1) || (i == 2)
             GQ3DID[2] + (GQ3DID[3] - 1) * GQPNQuad1D
-        elseif (fid == 3) || (fid == 4)
+        elseif (i == 3) || (i == 4)
             GQ3DID[1] + (GQ3DID[3] - 1) * GQPNQuad1D
-        elseif (fid == 5) || (fid == 6)
+        elseif (i == 5) || (i == 6)
             GQ3DID[1] + (GQ3DID[2] - 1) * GQPNQuad1D
         else
-            throw("Only 6 fances, $fid is a inproper index.")
+            throw("Only 6 faces, $i is a inproper index.")
         end
     end
     re
 end
 
 """
-得到第 i 个面所在的基函数的 奇异处理 下的 “自由端( r₀ )” 的id
-输入::
-uvw     当前的 uvw 坐标
-::i 第 i 个面的参数类型
-返回:: uvw 对应地第 i 个面的自由端(奇异)的 id
+    getFreeVIDFromGQ3DIDSglr(GQ3DID::NTuple{3, Int}, i::Integer)
+
+得到第 i 个面所在的基函数的 处理奇异性时，三维坐标为 `GQ3DID` 的高斯求积点的 “自由端``r₀``” 的序号。
 """
-function getFreeVIDFromGQ3DIDSglr(GQ3DID::NTuple{3, Int}, fid::Integer)
+function getFreeVIDFromGQ3DIDSglr(GQ3DID::NTuple{3, Int}, i::Integer)
     @inbounds re = begin
-        if (fid == 1) || (fid == 2)
+        if (i == 1) || (i == 2)
             GQ3DID[2] + (GQ3DID[3] - 1) * GQPNQuad1DSglr
-        elseif (fid == 3) || (fid == 4)
+        elseif (i == 3) || (i == 4)
             GQ3DID[1] + (GQ3DID[3] - 1) * GQPNQuad1DSglr
-        elseif (fid == 5) || (fid == 6)
+        elseif (i == 5) || (i == 6)
             GQ3DID[1] + (GQ3DID[2] - 1) * GQPNQuad1DSglr
         else
-            throw("Only 6 fances, $fid is a inproper index.")
+            throw("Only 6 faces, $i is a inproper index.")
         end
     end
     re
 end
 
 """
-得到第 i 个面所在的基函数的 奇异处理 下的 “自由端( r₀ )” 的id
-输入::
-uvw     当前的 uvw 坐标
-::i 第 i 个面的参数类型
-返回:: uvw 对应地第 i 个面的自由端(奇异)的 id
+    getFreeVIDFromGQ3DIDSSglr(GQ3DID::NTuple{3, Int}, i::Integer)
+
+得到第 i 个面所在的基函数的 处理超奇异性时，三维坐标为 `GQ3DID` 的高斯求积点的 “自由端``r₀``” 的序号。
 """
-function getFreeVIDFromGQ3DIDSSglr(GQ3DID::NTuple{3, Int}, fid::Integer)
+function getFreeVIDFromGQ3DIDSSglr(GQ3DID::NTuple{3, Int}, i::Integer)
     @inbounds re = begin
-        if (fid == 1) || (fid == 2)
+        if (i == 1) || (i == 2)
             GQ3DID[2] + (GQ3DID[3] - 1) * GQPNQuad1DSSglr
-        elseif (fid == 3) || (fid == 4)
+        elseif (i == 3) || (i == 4)
             GQ3DID[1] + (GQ3DID[3] - 1) * GQPNQuad1DSSglr
-        elseif (fid == 5) || (fid == 6)
+        elseif (i == 5) || (i == 6)
             GQ3DID[1] + (GQ3DID[2] - 1) * GQPNQuad1DSSglr
         else
-            throw("Only 6 fances, $fid is a inproper index.")
+            throw("Only 6 faces, $i is a inproper index.")
         end
     end
     re

@@ -6,18 +6,23 @@ include("MeshProcess/MeshProcess.jl")
 include("BasicVSCellType/CellTypes.jl")
 include("BasisFunctions/BFs.jl")
 
+"""
+创建结构体保存面、体基函数类型。
+"""
 mutable struct VSBFTstruct
     sbfType::DataType
     vbfType::DataType
 end
 
 """
-创建字典保存本次仿真时的面、体基函数类型
+创建常数实例保存仿真时的面、体基函数类型。
 """
 const VSBFTypes =   VSBFTstruct(BasisFunctionType, BasisFunctionType)
 
 """
-更新体、面基函数类型字典
+    updateVSBFTypes!(;sbfType = BasisFunctionType, vbfType = BasisFunctionType)
+
+更新体、面基函数类型常数实例。
 """
 function updateVSBFTypes!(;sbfType = BasisFunctionType, vbfType = BasisFunctionType)
     VSBFTypes.sbfType  =   sbfType
@@ -25,6 +30,11 @@ function updateVSBFTypes!(;sbfType = BasisFunctionType, vbfType = BasisFunctionT
     nothing
 end
 
+"""
+    updateVSBFTParams!(;sbfT = :nothing, vbfT = :nothing)
+
+通过输入符号更新体、面基函数类型常数实例。
+"""
 function updateVSBFTParams!(;sbfT = :nothing, vbfT = :nothing)
     # 精度
     FloatDtype  =   Precision.FT
@@ -62,8 +72,9 @@ getBFTfromCellT(::Type{T}) where {T<:TriangleInfo}      =   VSBFTypes.sbfType
 getBFTfromCellT(::Type{T}) where {T<:VolumeCellType}    =   VSBFTypes.vbfType
 
 """
-根据读取的网格数据生成网格元 + 基函数信息
-返回值 
+    getCellsBFs(meshData, vbfT)
+
+根据读取的网格数据生成网格元 + 基函数信息。
 """
 function getCellsBFs(meshData, vbfT)
 
@@ -225,12 +236,9 @@ function getCellsBFs(meshData, vbfT)
 end
 
 """
-通过文件名直接读取网格元
-输入:
-meshFileName::  文件名字符串
-meshUnit::      网格单位
-sbfT    ::      面基函数类型
-vbfT    ::      体基函数类型
+    getCellsFromFileName(meshFileName; meshUnit = MeshUnit, sbfT = :RWG, vbfT = :nothing)
+
+通过文件名 `meshFileName` 直接读取网格元。
 """
 function getCellsFromFileName(meshFileName; meshUnit = MeshUnit, sbfT = :RWG, vbfT = :nothing)
     # 更新仿真参数
@@ -250,12 +258,9 @@ function getCellsFromFileName(meshFileName; meshUnit = MeshUnit, sbfT = :RWG, vb
 end
 
 """
-通过文件名直接读取网格元、创建基函数信息
-输入:
-meshFileName::  文件名字符串
-meshUnit::      网格单位
-sbfT    ::      面基函数类型
-vbfT    ::      体基函数类型
+    getCellsBFsFromFileName(meshFileName; meshUnit = MeshUnit, sbfT = :RWG, vbfT = :nothing)
+
+通过文件名 `meshFileName` 直接读取网格元、创建基函数信息。
 """
 function getCellsBFsFromFileName(meshFileName; meshUnit = MeshUnit, sbfT = :RWG, vbfT = :nothing)
     
@@ -273,12 +278,9 @@ function getCellsBFsFromFileName(meshFileName; meshUnit = MeshUnit, sbfT = :RWG,
 end
 
 """
-通过文件名直接读取网格元
-输入:
-meshFileName::  文件名字符串
-meshUnit::      网格单位
-sbfT    ::      面基函数类型
-vbfT    ::      体基函数类型
+    getBFsFromMeshData(meshData; sbfT = :nothing, vbfT = :nothing)
+
+通过网格信息 `meshData` 创建基函数信息。
 """
 function getBFsFromMeshData(meshData; sbfT = :nothing, vbfT = :nothing)
     # 保存仿真参数

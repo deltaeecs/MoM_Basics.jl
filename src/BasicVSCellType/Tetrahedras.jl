@@ -205,36 +205,32 @@ function setδκ!(geosInfo::AbstractVector{VT}) where {VT<:VolumeCellType}
 end
 
 
-"""
-计算得到第ii个几何体的高斯求积坐标
-    该函数针对四面体， 输入值：
-vertices：  四面体角点坐标， MArray{Tuple{3, 3}, FT}
-ii      ：  索取第几个坐标
-GQMode  :   用于奇异积分时
-返回值  :  第ii个高斯求积点坐标, 类型为:SVector{3, FT}
-"""
-@inline function getGQPTetra(tetra::TetrahedraInfo, ii::IT) where {IT <: Integer}
-    # 直接向量相乘，此处采用的是矩阵乘法
-    @views @inbounds tetra.vertices * TetraGQInfo.coordinate[:, ii]
-end
+@doc """
+    getGQPTetra(tetra::TetrahedraInfo, i::IT) where {IT <: Integer}
+    getGQPTetra(tetra::TetrahedraInfo)
 
+计算 `tetra` 正常求积的第 `i` 个或所有高斯求积坐标。
 """
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
-"""
-@inline function getGQPTetra(tetra::TetrahedraInfo)
+function getGQPTetra(tetra::TetrahedraInfo, i::IT) where {IT <: Integer}
+    # 直接向量相乘，此处采用的是矩阵乘法
+    @views @inbounds tetra.vertices * TetraGQInfo.coordinate[:, i]
+end
+function getGQPTetra(tetra::TetrahedraInfo)
     # 直接向量相乘，此处采用的是矩阵乘法
     @inbounds tetra.vertices * TetraGQInfo.coordinate
 end
 
-@inline function getGQPTetraSglr(tetra::TetrahedraInfo, ii::IT) where {IT <: Integer}
-    # 直接向量相乘，此处采用的是矩阵乘法
-    @views @inbounds  tetra.vertices * TetraGQInfoSglr.coordinate[:, ii]
-end
+@doc """
+    getGQPTetraSglr(tetra::TetrahedraInfo, i::IT) where {IT <: Integer}
+    getGQPTetraSglr(tetra::TetrahedraInfo)
 
+计算 `tetra` 处理奇异性求积的第 `i` 个或所有高斯求积坐标。
 """
-同上函数，此时不输入ii, 返回所有求积点，返回值类型为
-"""
-@inline function getGQPTetraSglr(tetra::TetrahedraInfo)
+function getGQPTetraSglr(tetra::TetrahedraInfo, i::IT) where {IT <: Integer}
+    # 直接向量相乘，此处采用的是矩阵乘法
+    @views @inbounds  tetra.vertices * TetraGQInfoSglr.coordinate[:, i]
+end
+function getGQPTetraSglr(tetra::TetrahedraInfo)
     # 直接向量相乘，此处采用的是矩阵乘法
     @inbounds tetra.vertices * TetraGQInfoSglr.coordinate
 end

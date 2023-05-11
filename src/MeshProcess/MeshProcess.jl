@@ -1,31 +1,43 @@
 #=本文件用于处理网格文件, 目前仅支持.nas格式的网格=#
 
-"""构建网格文件抽象类型"""
+"""
+网格文件抽象类型
+"""
 abstract type MeshFormat end
-"nas文件符合类型，存在字段pathname保存文件名称和相对路径"
+
+"""
+.nas 网格文件类型。
+"""
 struct NasMesh<:MeshFormat
     pathname ::String
 
     function NasMesh(MeshFile::String)
         # nas格式
-        !occursin(".nas",  MeshFile) &&  throw("输入的不是 .nas 文件，目前只支持该类型网格文件。")
+        !endswith(MeshFile, ".nas") &&  throw("输入的不是 .nas 文件，目前只支持该类型网格文件。")
         new(MeshFile)
     end
 end
 
+"""
+网格数据抽象类型
+"""
 abstract type MeshDataType end
 
 """
-网格文件类型，目前包含三角形\\四面体\\六面体信息，包含属性如下：
-geonum      :: 包含的所有网格元的数量
-meshT       :: 网格类型 单一的以其网格类型表示，混合以 VSCellType 表示
-trinum      : 包含的三角形数量
-tetranum    : 包含的四面体数量
-hexanum     : 包含的六面体数量
-node        : 节点坐标数组:(3*nodenum)
-triangles   : 三角形包含的nodeid数组:(3*trinum)
-tetrahedras : 四面体包含的nodeid数组:(4*tetranum)
-hexahedras  : 六面体包含的nodeid数组:(6*hexanum)
+    MeshNodeTriTetraHexa{IT, FT} <: MeshDataType
+
+三角形、四面体、六面体混合网格数据类型：
+```
+geonum      ::Int           包含的所有网格元的数量
+meshT       ::DataType      网格类型 单一的以其网格类型表示，混合以 VSCellType 表示
+trinum      ::Int           包含的三角形数量
+tetranum    ::Int           包含的四面体数量
+hexanum     ::Int           包含的六面体数量
+node        ::Array{FT, 2}  节点坐标数组(3*nodenum)
+triangles   ::Array{IT, 2}  三角形包含的nodeid数组:(3*trinum)
+tetrahedras ::Array{IT, 2}  四面体包含的nodeid数组:(4*tetranum)
+hexahedras  ::Array{IT, 2}  六面体包含的nodeid数组:(6*hexanum)
+```
 """
 struct MeshNodeTriTetraHexa{IT, FT} <: MeshDataType
     geonum      ::Int
@@ -40,7 +52,9 @@ struct MeshNodeTriTetraHexa{IT, FT} <: MeshDataType
 end
 
 """
-读取文件中的节点坐标、三角形点、四面体点
+    getNodeTriTetraFekoNas(pathname::ST, FT::Type{T}=Precision.FT) where {ST <: AbstractString,T<:AbstractFloat}
+
+读取 `.nas` 文件中的节点坐标、三角形点、四面体点。
 """
 function getNodeTriTetraFekoNas(pathname::ST, FT::Type{T}=Precision.FT) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数
@@ -114,7 +128,9 @@ function getNodeTriTetraFekoNas(pathname::ST, FT::Type{T}=Precision.FT) where {S
 end
 
 """
-读取文件中的节点坐标、三角形点、四面体点
+    getNodeTriTetraHexaNas(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
+
+读取 `.nas` 文件中的节点坐标、三角形点、四面体点、六面体点。
 """
 function getNodeTriTetraHexaNas(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数
@@ -252,6 +268,11 @@ function getNodeTriTetraHexaNas(pathname::ST; FT::Type{T}=Precision.FT, meshUnit
 
 end
 
+"""
+    _nastran_string_to_float(string)
+
+解析 `.nas` 文件中的字符串。
+"""
 function _nastran_string_to_float(string)
     try
         return parse(Float64, string)
@@ -280,6 +301,8 @@ end
 
 
 """
+    getMeshData(meshFileName::String; meshUnit=:mm)
+
 读取文件中的节点坐标、三角形点、四面体点、六面体点
 """
 function getMeshData(meshFileName::String; meshUnit=:mm)
@@ -309,7 +332,9 @@ function getMeshData(meshFileName::String; meshUnit=:mm)
 end
 
 """
-节点与网格元之间的连接稀疏矩阵。
+    getConnectionMatrix(meshData)
+
+通过 `meshData` 获取节点与网格元之间的连接稀疏矩阵。
 """
 function getConnectionMatrix(meshData)
     # 节点数
@@ -337,7 +362,9 @@ end
 
 
 """
-读取项目文件（.dat格式）
+    getdatNodeElementParam(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
+
+读取 `.dat` 格式的自定义项目文件。
 """
 function getdatNodeElementParam(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数

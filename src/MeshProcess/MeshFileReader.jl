@@ -2,18 +2,16 @@ module MeshFileReader
 
 using FiniteMesh, Meshes
 
-
 export  readMesh, 
         generateMeshFromFile, 
         fromNodesCells2SimpleMesh, 
         fromNodesConns2SimpleMesh
 
-
 """
-读取网格文件并根据输入的单位将坐标单位换算成 "米" ，注意对于 Hypermesh 生成的网格，其单位多为毫米(mm)
-输入：
-fn:: 文件路径 + 名
-unit:: 网格文件所采用的单位，目前支持 米(m)， 厘米(cm)， 毫米(mm) 三种单位" 
+    readMesh(fn::T, unit::Symbol) where{T<:AbstractString}
+
+读取名称为 `fn` 的网格文件并根据输入的单位将坐标单位换算成 `米(m)` ，
+注意对于 Hypermesh 生成的网格，一般不存在单位，可根据实际情况填写单位。 
 """
 function readMesh(fn::T, unit::Symbol) where{T<:AbstractString}
     
@@ -33,18 +31,16 @@ function readMesh(fn::T, unit::Symbol) where{T<:AbstractString}
 
 end
 
-"""
-给出三种 "FiniteMesh" 读取出的网格类型到对应的 "Meshes" 网格类型的字典
-"""
-const cellTypesDict = Dict("triangle" => Triangle, "tetra" => Tetrahedron, "hexahedron" => Hexahedron)
-const cellTypes     = Dict(3 => Triangle, 4=> Tetrahedron, 8=> Hexahedron)
-
-# 测试
-# cells, nodes = read_mesh("meshfiles/cone_1GHz.nas", :mm)
-
+# """
+# [`FiniteMesh`](@ref) 读取出的三角形、四面体、六面体网格类型到对应的 [`Meshes`](@ref) 网格类型的字典。
+# """
+# const cellTypesDict = Dict("triangle" => Triangle, "tetra" => Tetrahedron, "hexahedron" => Hexahedron)
+# const cellTypes     = Dict(3 => Triangle, 4=> Tetrahedron, 8=> Hexahedron)
 
 """
-用读出的数据生成网格
+    generateMeshFromFile(fn::T, unit::Symbol) where{T<:AbstractString}
+
+用读出的数据生成 [`Meshes`](@ref) 网格。
 """
 function generateMeshFromFile(fn::T, unit::Symbol) where{T<:AbstractString}
     # 读取单元和点
@@ -55,7 +51,9 @@ function generateMeshFromFile(fn::T, unit::Symbol) where{T<:AbstractString}
 end
 
 """
-nodes and cells to mesh
+    fromNodesCells2SimpleMesh(nodes, cells)
+
+用读出的网格 `cells` 和节点 `nodes` 数据生成 [`Meshes`](@ref) 网格。
 """
 function fromNodesCells2SimpleMesh(nodes, cells)
     # 点数组到点类型
@@ -75,16 +73,15 @@ function fromNodesCells2SimpleMesh(nodes, cells)
     cons =  connect.(Tuple.(eachrow(cells.index[1])), cellTypesDict[cells.type[1]])
 
     # 构建网格
-    mesh = SimpleMesh(points, cons)
+    return SimpleMesh(points, cons)
 
 end # function
 
 
 """
-nodes and connects to mesh
-nodes:: Matrix{FT} (3, n)
-connects:: Matrix{IT} (ngeo, ncell)
-geoTi 1:triangle, 2:tetrahedra, 3:hexahedra
+    fromNodesConns2SimpleMesh(nodes, cons)
+
+用节点 `nodes` 和连接 `cons` 数据生成 [`Meshes`](@ref) 网格。
 """
 function fromNodesConns2SimpleMesh(nodes, cons)
     # 点数组到点类型

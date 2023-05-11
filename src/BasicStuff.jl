@@ -15,11 +15,9 @@ const   Z_HAT   =   SVec3D{Float32}([0 0 1])
 Vec3D{T}(x::Number) where T<:Number = fill(x, Vec3D{T})
 
 """
-∠ 空间角度信息类型，保存以避免大量重复计算
-包含信息：
-∠   ::FT
-sin∠::FT
-cos∠::FT
+    ∠Info{FT<:Real}
+
+∠ 空间角度信息类型，保存以避免大量重复计算。
 """
 struct ∠Info{FT<:Real}
     ∠   ::FT
@@ -33,14 +31,9 @@ function ∠Info{FT}(∠::FT = zero(FT)) where {FT<:Real}
 end # function
 
 """
-θ ϕ 空间角度信息类型，保存以避免大量重复计算
-包含信息：
-θ   ::FT
-ϕ   ::FT
-sinθ::FT
-cosθ::FT
-sinϕ::FT
-cosϕ::FT
+    θϕInfo{FT<:Real}
+
+θ ϕ 空间角度信息类型，保存以避免大量重复计算。
 """
 struct θϕInfo{FT<:Real}
     θ   ::FT
@@ -51,54 +44,37 @@ struct θϕInfo{FT<:Real}
     cosϕ::FT
 end # struct
 
-"""
-θϕInfo的构造函数
-输入为角度值
-θ::FT
-ϕ::FT
+@doc """
+    θϕInfo{FT}(θ::FT = zero(FT), ϕ::FT = zero(FT)) where {FT<:Real}
+    θϕInfo(θ::FT, ϕ::FT) where {FT<:Real}
+    θϕInfo{FT}(θ::∠Info{FT}, ϕ::∠Info{FT}) where {FT<:Real}
+    θϕInfo{FT}(θ::FT, ϕ::∠Info{FT}) where {FT<:Real}
+    θϕInfo{FT}(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
+
+输入角度 `θ` 和 `ϕ` 构造 `θϕInfo` 实例。
 """
 function θϕInfo{FT}(θ::FT = zero(FT), ϕ::FT = zero(FT)) where {FT<:Real}
     local sinθ, cosθ =   sincos(θ)
     local sinϕ, cosϕ =   sincos(ϕ)
     θϕInfo{FT}(θ, ϕ, sinθ, cosθ, sinϕ, cosϕ)
 end # function
-
-"""
-θϕInfo的构造函数
-输入为角度类型实例
-θ::∠Info{FT}
-ϕ::∠Info{FT}
-"""
+θϕInfo(θ::FT, ϕ::FT) where {FT<:Real} = θϕInfo{FT}(θ, ϕ)
 function θϕInfo{FT}(θ::∠Info{FT}, ϕ::∠Info{FT}) where {FT<:Real}
     θϕInfo{FT}(θ.∠, ϕ.∠, θ.sin∠, θ.cos∠, ϕ.sin∠, ϕ.cos∠)
 end # function
-
-"""
-θϕInfo的构造函数
-输入为角度值和角度类型实例
-θ::FT
-ϕ::∠Info{FT}
-"""
 function θϕInfo{FT}(θ::FT, ϕ::∠Info{FT}) where {FT<:Real}
     local sinθ, cosθ =   sincos(θ)
     θϕInfo{FT}(θ, ϕ.∠, sinθ, cosθ, ϕ.sin∠, ϕ.cos∠)
 end # function
-
-"""
-θϕInfo的构造函数
-输入为角度类型实例和角度值
-θ::∠Info{FT}
-ϕ::FT
-"""
 function θϕInfo{FT}(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
     local sinϕ, cosϕ =   sincos(ϕ)
     θϕInfo{FT}(θ.∠, ϕ, θ.sin∠, θ.cos∠, sinϕ, cosϕ)
 end # function
 
 """
-从直角坐标计算三角函数信息
-输入为直角坐标向量
-rvec::Vec3D{FT}
+    θϕInfo{FT}(rvec::AbstractVector{FT}) where {FT<:Real}
+
+输入直角坐标角度 `rvec` 构造 `θϕInfo` 实例。
 """
 function θϕInfo{FT}(rvec::AbstractVector{FT}) where {FT<:Real}
     # xy平面的投影
@@ -131,10 +107,9 @@ r̂func(θ::FT, ϕ::FT) where{FT<:Real}         =   MVec3D{FT}([sin(θ)*cos(ϕ) 
 
 
 """
+    r̂θϕInfo{FT<:Real}
+
 r̂ θ ϕ 空间角度信息类型，保存以避免大量重复计算
-包含信息：
-r̂   ::MVec3D{FT}
-θϕ  ::θϕInfo{FT}
 """
 struct r̂θϕInfo{FT<:Real}
     r̂   ::MVec3D{FT}
@@ -144,12 +119,15 @@ struct r̂θϕInfo{FT<:Real}
 end # struct
 
 """
-θϕInfo的构造函数
-输入为角度值
-θ::FT
-ϕ::FT
+    r̂θϕInfo(θ::FT = zero(FT), ϕ::FT = zero(FT)) where {FT<:Real}
+    r̂θϕInfo(θ::∠Info{FT}, ϕ::∠Info{FT}) where {FT<:Real}
+    r̂θϕInfo(θ::FT, ϕ::∠Info{FT}) where {FT<:Real}
+    r̂θϕInfo(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
+
+r̂θϕInfo 的构造函数
+输入角度 `θ` 和 `ϕ` 构造 `r̂θϕInfo` 实例。
 """
-function r̂θϕInfo{FT}(θ::FT = zero(FT), ϕ::FT = zero(FT)) where {FT<:Real}
+function r̂θϕInfo(θ::FT = zero(FT), ϕ::FT = zero(FT)) where {FT<:Real}
     local sinθ, cosθ =   sincos(θ)
     local sinϕ, cosϕ =   sincos(ϕ)
     θϕ  =   θϕInfo{FT}(θ, ϕ, sinθ, cosθ, sinϕ, cosϕ)
@@ -158,28 +136,14 @@ function r̂θϕInfo{FT}(θ::FT = zero(FT), ϕ::FT = zero(FT)) where {FT<:Real}
     ϕhat=   ϕhatfunc(θϕ)
     r̂θϕInfo{FT}(r̂, θhat, ϕhat, θϕ)
 end # function
-
-"""
-θϕInfo的构造函数
-输入为角度类型实例
-θ::∠Info{FT}
-ϕ::∠Info{FT}
-"""
-function r̂θϕInfo{FT}(θ::∠Info{FT}, ϕ::∠Info{FT}) where {FT<:Real}
+function r̂θϕInfo(θ::∠Info{FT}, ϕ::∠Info{FT}) where {FT<:Real}
     θϕ  =   θϕInfo{FT}(θ.∠, ϕ.∠, θ.sin∠, θ.cos∠, ϕ.sin∠, ϕ.cos∠)
     r̂   =   r̂func(θϕ)
     θhat=   θhatfunc(θϕ)
     ϕhat=   ϕhatfunc(θϕ)
     r̂θϕInfo{FT}(r̂, θhat, ϕhat, θϕ)
 end # function
-
-"""
-θϕInfo的构造函数
-输入为角度值和角度类型实例
-θ::FT
-ϕ::∠Info{FT}
-"""
-function r̂θϕInfo{FT}(θ::FT, ϕ::∠Info{FT}) where {FT<:Real}
+function r̂θϕInfo(θ::FT, ϕ::∠Info{FT}) where {FT<:Real}
     local sinθ, cosθ =   sincos(θ)
     θϕ  =   θϕInfo{FT}(θ, ϕ.∠, sinθ, cosθ, ϕ.sin∠, ϕ.cos∠)
     r̂   =   r̂func(θϕ)
@@ -187,14 +151,7 @@ function r̂θϕInfo{FT}(θ::FT, ϕ::∠Info{FT}) where {FT<:Real}
     ϕhat=   ϕhatfunc(θϕ)
     r̂θϕInfo{FT}(r̂, θhat, ϕhat, θϕ)
 end # function
-
-"""
-θϕInfo的构造函数
-输入为角度类型实例和角度值
-θ::∠Info{FT}
-ϕ::FT
-"""
-function r̂θϕInfo{FT}(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
+function r̂θϕInfo(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
     local sinϕ, cosϕ =   sincos(ϕ)
     θϕ  =   θϕInfo{FT}(θ.∠, ϕ, θ.sin∠, θ.cos∠, sinϕ, coϕ)
     r̂   =   r̂func(θϕ)
@@ -204,12 +161,11 @@ function r̂θϕInfo{FT}(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
 end # function
 
 """
-θϕInfo的构造函数
-输入为r̂向量
-θ::∠Info{FT}
-ϕ::FT
+    r̂θϕInfo{FT}(rvec::AbstractVector{FT}) where {FT<:Real}
+
+输入直角坐标角度 `rvec` 构造 `r̂θϕInfo` 实例。
 """
-function r̂θϕInfo{FT}(rvec::AbstractVector{FT}) where {FT<:Real}
+function r̂θϕInfo(rvec::AbstractVector{FT}) where {FT<:Real}
     r̂   =   rvec ./ norm(rvec)
     θϕ      =   θϕInfo{FT}(r̂)
     θhat    =   θhatfunc(θϕ)
@@ -218,9 +174,9 @@ function r̂θϕInfo{FT}(rvec::AbstractVector{FT}) where {FT<:Real}
 end # function
 
 """
-从直角坐标计算三角函数信息
-输入为直角坐标向量
-rvec::Vec3D{FT}
+    θϕInfofromCart(rvec::Vec3D{FT}) where {FT<:Real}
+
+从直角坐标 `rvec` 计算三角函数：``sinθ, cosθ, sinϕ, cosϕ``
 """
 function θϕInfofromCart(rvec::Vec3D{FT}) where {FT<:Real}
     # xy平面的投影
@@ -242,7 +198,9 @@ end # function
 
 
 """
-将球面散点转化为角度信息
+    nodes2Poles(nodes::Matrix{FT}) where {FT}
+
+将球面散点 `nodes` 转化为角度信息实例 `r̂θϕInfo` 数组。
 """
 function nodes2Poles(nodes::Matrix{FT}) where {FT}
     # 点数
