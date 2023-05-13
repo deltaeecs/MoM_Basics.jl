@@ -172,7 +172,7 @@ unit: 输入角度值单位，默认为 :rad，可选 :deg
 rotMat :: SMatrix{3, 3, FT}, 坐标旋转矩阵
 rotMat * vec 将 vec 从局部坐标转换回全局坐标
 """
-function eulerRotationMat(α::FT, β::FT, γ::FT, unit::Symbol) where{FT<:Real}
+function eulerRotationMat(α::FT, β::FT, γ::FT, unit::Symbol = :rad) where{FT<:Real}
     # 角度信息转换到弧度 rad
     α_rad   =   zero(FT)
     β_rad   =   zero(FT)
@@ -200,7 +200,7 @@ end
 
 计算天线阵按给定任意轴 `axis`, 旋转 `θ`` 角度的旋转矩阵。
 """
-function eulerRotationMat(axis::Vec3D{FT}, θ::FT, unit::Symbol) where{FT<:Real}
+function eulerRotationMat(axis::Vec3D{FT}, θ::FT, unit::Symbol = :rad) where{FT<:Real}
 
     # 计算旋转角度的三角函数信息
     θ_rad   = if unit == :rad 
@@ -219,7 +219,7 @@ end
 
 计算转到给定指向 `θ, ϕ` 处的旋转矩阵，旋转一步到位，不发生自旋。
 """
-function eulerRotationMat(θ::FT, ϕ::FT, unit::Symbol) where{FT<:AbstractFloat}
+function eulerRotationMat(θ::FT, ϕ::FT, unit::Symbol = :rad) where{FT<:AbstractFloat}
 
     θ_rad   =   zero(FT)
     ϕ_rad   =   zero(FT)
@@ -275,7 +275,7 @@ const divπ = 1/π
 """
     sincmath(x::T) where{T<:Number}
 
-Julia 自带 [sinc](@ref Base.sinc) 函数计算的是归一化辛格函数:
+Julia 自带 [`Base.sinc`](@ref) 函数计算的是归一化辛格函数:
 
 ``sinc(x)     =   sin(πx)/(πx)``
 
@@ -287,13 +287,13 @@ Julia 自带 [sinc](@ref Base.sinc) 函数计算的是归一化辛格函数:
 sincmath(x::T) where{T<:Number} = sinc(x*divπ)
 
 @doc """
-    sphere2cart(coor_sphere::Vec3D{T}) where T<:Real
+    sphere2cart(coor_sphere::AbstractVector{T}) where T<:Real
     sphere2cart(coor_sphere...)
     sphere2cart(r::T, θϕ::θϕInfo{T}) where T<:Real
 
 将球坐标 `coor_sphere` 转换到直角坐标。
 """
-function sphere2cart(coor_sphere::Vec3D{T}) where T<:Real
+function sphere2cart(coor_sphere::AbstractVector{T}) where T<:Real
     # 球坐标下的一些量
     local r         =   coor_sphere[1]
     local sinθ,cosθ =   sincos(coor_sphere[2])

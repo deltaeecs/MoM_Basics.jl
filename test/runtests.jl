@@ -1,4 +1,4 @@
-using MoM_Basics
+using MoM_Basics, LinearAlgebra
 using Test
 
 @testset "MoM_Basics.jl" begin
@@ -13,6 +13,10 @@ using Test
 
     @testset "Basis functions" begin
         include("basis_functions.jl")
+    end
+
+    @testset "Sources" begin
+        include("sources.jl")
     end
     rm("results"; force = true, recursive = true)
 

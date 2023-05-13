@@ -50,7 +50,7 @@ end
 
 计算全局向量组成的矩阵 `rvecsglobal` 在给定局部至全局坐标旋转矩阵 `l2gRot` 下的局部坐标，局部坐标的原点在全局坐标的 `r0InGlobal` 处。
 """
-function globalrvec2Local(rvecsglobal::Matrix{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::Vec3D{FT}) where {T<:Number, FT<:Real}
+function globalrvec2Local(rvecsglobal::Matrix{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::AbstractVector{FT}) where {T<:Number, FT<:Real}
     # 预分配内存
     rvecslocal      =   similar(rvecsglobal)
 
@@ -81,7 +81,7 @@ end
 
 计算局部向量组成的矩阵 `rvecslocal` 在给定局部至全局坐标旋转矩阵 `l2gRot` 下的全局坐标，局部坐标的原点在全局坐标的 `r0InGlobal` 处。
 """
-function localrvec2Global(rvecslocal::Matrix{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::Vec3D{FT}) where {T<:Number, FT<:Real}
+function localrvec2Global(rvecslocal::Matrix{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::AbstractVector{FT}) where {T<:Number, FT<:Real}
     # 预分配内存
     rvecsglobal      =   similar(rvecslocal)
 
@@ -97,7 +97,7 @@ end
 
 计算全局向量 `rvecglobal` 在给定局部至全局坐标旋转矩阵 `l2gRot` 下的局部坐标。
 """
-function globalrvec2Local(rvecglobal::Vec3D{T}, l2gRot::StaticMatrix{3,3, FT}) where {T<:Number, FT<:Real}
+function globalrvec2Local(rvecglobal::AbstractVector{T}, l2gRot::StaticMatrix{3,3, FT}) where {T<:Number, FT<:Real}
     @inbounds l2gRot' * rvecglobal
 end
 
@@ -106,7 +106,7 @@ end
 
 计算全局向量 `rvecglobal` 在给定局部至全局坐标旋转矩阵 `l2gRot` 下的局部坐标，局部坐标的原点在全局坐标的 `r0InGlobal` 处。
 """
-function globalrvec2Local(rvecglobal::Vec3D{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::Vec3D{FT}) where {T<:Number, FT<:Real}
+function globalrvec2Local(rvecglobal::AbstractVector{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::Vec3D{FT}) where {T<:Number, FT<:Real}
     @inbounds l2gRot' * (rvecglobal .- r0InGlobal)
 end
 
@@ -116,7 +116,7 @@ end
 
 计算局部向量 `rveclocal` 在给定局部至全局坐标旋转矩阵 `l2gRot` 下的全局坐标。
 """
-function localrvec2Global(rveclocal::Vec3D{T}, l2gRot::StaticMatrix{3,3, FT}) where {T<:Number, FT<:Real}
+function localrvec2Global(rveclocal::AbstractVector{T}, l2gRot::StaticMatrix{3,3, FT}) where {T<:Number, FT<:Real}
     @inbounds l2gRot * rveclocal
 end
 
@@ -125,6 +125,6 @@ end
 
 计算局部向量 `rveclocal` 在给定局部至全局坐标旋转矩阵 `l2gRot` 下的全局坐标，局部坐标的原点在全局坐标的 `r0InGlobal` 处。
 """
-function localrvec2Global(rvecslocal::Vec3D{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::Vec3D{FT}) where {T<:Number, FT<:Real}
+function localrvec2Global(rvecslocal::AbstractVector{T}, l2gRot::StaticMatrix{3,3, FT}, r0InGlobal::Vec3D{FT}) where {T<:Number, FT<:Real}
     @inbounds l2gRot * rvecslocal .+ r0InGlobal
 end

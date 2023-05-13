@@ -60,19 +60,19 @@ end
 PlaneWave(args...) = PlaneWave{Precision.FT}(args...) 
 
 @doc """
-    sourceEfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+    sourceEfield(plw::PlaneWave, r)
 
 计算平面波 `plw` 在全局坐标下给定位置 `r` 处的电场。
 """
-function sourceEfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+function sourceEfield(plw::PlaneWave, r)
     plw.E_v*exp(-Params.JK_0*(plw.k̂ ⋅ r))
 end
 
 @doc """
-    sourceHfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+    sourceHfield(plw::PlaneWave, r)
 
 计算平面波 `plw` 在全局坐标下给定位置 `r` 处的磁场。
 """
-@inline function sourceHfield(plw::PlaneWave{FT}, r::Vec3D{FT}) where{FT<:Real}
+function sourceHfield(plw::PlaneWave, r)
     1/η_0*(plw.k̂ × sourceEfield(plw, r))
 end
