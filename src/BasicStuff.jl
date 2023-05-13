@@ -7,12 +7,7 @@ MVec3D{T}   =   MVector{3, T} where T<:Number
 
 SVec3D{T}(x::Number) where T<:Number = fill(x, SVec3D{T})
 MVec3D{T}(x::Number) where T<:Number = fill(x, MVec3D{T})
-# # 单位向量
-const   X_HAT   =   SVec3D{Float32}([1 0 0])
-const   Y_HAT   =   SVec3D{Float32}([0 1 0])
-const   Z_HAT   =   SVec3D{Float32}([0 0 1])
-
-Vec3D{T}(x::Number) where T<:Number = fill(x, Vec3D{T})
+Vec3D{T}(x::Number)  where T<:Number = fill(x, Vec3D{T})
 
 """
     ∠Info{FT<:Real}
@@ -178,7 +173,7 @@ end # function
 
 从直角坐标 `rvec` 计算三角函数：``sinθ, cosθ, sinϕ, cosϕ``
 """
-function θϕInfofromCart(rvec::Vec3D{FT}) where {FT<:Real}
+function θϕInfofromCart(rvec::AbstractVector{FT}) where {FT<:Real}
     # xy平面的投影
     ρ   =   sqrt(rvec[1]^2 + rvec[2]^2)
     if ρ == 0

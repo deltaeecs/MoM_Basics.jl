@@ -75,7 +75,25 @@ function MagneticDipole{FT}(
     MagneticDipole{FT}(id, ImlCT, V, phase, orient, centerlc, centergb, l2gRot)
 
 end
-MagneticDipole(args...) = MagneticDipole{Precision.FT}(args...)
+
+"""
+    MagneticDipole(id = 0; Iml = 0., phase = 0., orient = zero(MVec3D{Float32}), centerlc = zero(MVec3D{Float32}), centergb = zero(MVec3D{Float32}))
+
+精度可变的 MagneticDipole 构造函数
+"""
+function MagneticDipole(id = 0; Iml = 0., phase = 0., orient = zero(MVec3D{Float32}), centerlc = zero(MVec3D{Float32}), centergb = zero(MVec3D{Float32}))
+    FT  =   Precision.FT
+    CT  =   Complex{FT}
+    id      ::Int32 =   id
+    Iml     ::FT    =   Iml
+    phase   ::FT    =   phase
+    orient  ::MVec3D{FT}    =   orient
+    centerlc::MVec3D{FT}    =   centerlc
+    centergb::MVec3D{FT}    =   centergb
+    ImlCT   =   CT(Iml*cos(phase), Iml*sin(phase))
+
+    MagneticDipole{FT}(id; Iml = ImlCT, phase=phase, orient=orient, centerlc=centerlc, centergb=centergb)
+end
 
 """
     update_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
@@ -85,7 +103,9 @@ MagneticDipole(args...) = MagneticDipole{Precision.FT}(args...)
 function update_phase!(md::MagneticDipole{FT}, phase) where {FT <: Real}
     # 当前幅值
     V   =   md.V
+    md.phase = phase
     # 更新磁流大小（带相位）
+    CT  =   Complex{FT}
     md.Iml   =   CT(V*cos(phase), V*sin(phase))
 
     nothing
@@ -131,8 +151,7 @@ end
 
 计算磁偶极 `md` 在磁偶极局部坐标给定位置 `rvec` 处的电场。
 """
-function sourceLocalEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
-    CT  =   Complex{FT}
+function sourceLocalEfield(md::MagneticDipole, r_observe::AbstractVector{FT};  r_coortype::Symbol=:C) where {FT<:Real}
     # 笛卡尔坐标下的坐标值    r_xyz
     # 判断坐标类型并计算赋值
     r_coortype == :C ?  (r_xyz = r_observe) : (
@@ -143,7 +162,7 @@ function sourceLocalEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coor
     # 局部坐标ϕ方向向量
     ϕhat    =   SVec3D{FT}(-sinϕ, cosϕ, zero(FT))
 
-    # 场点距离缝隙天线距离
+    # 场点距离天线距离
     R_mn    =   norm(r_xyz)
     divR_mn =   1/R_mn
     # 局部坐标下电场的xyz三个分量
@@ -157,8 +176,7 @@ end # function
 
 计算磁偶极 `md` 在全局坐标下给定位置 `rvec` 处的电场。
 """
-function sourceEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype::Symbol=:C) where {FT<:Real}
-    CT  =   Complex{FT}
+function sourceEfield(md::MagneticDipole, r_observe::AbstractVector{FT};  r_coortype::Symbol=:C) where {FT<:Real}
     # 笛卡尔坐标下的坐标值    r_xyz
     # 判断坐标类型并计算赋值
     r_coortype == :C ?  (r_xyz = r_observe) : (
@@ -167,7 +185,7 @@ function sourceEfield(md::MagneticDipole{FT}, r_observe::Vec3D{FT};  r_coortype:
     # r_xyz转换到 天线 局部坐标下
     r_xyzlc =   globalrvec2Local(r_xyz, md.l2gRot, md.centergb)
     # 局部坐标下电场的xyz三个分量
-    Eveclc  =  sourceLocalEfield(md, r_xyzlc)
+    Eveclc  =   sourceLocalEfield(md, r_xyzlc)
     # 转换到全局坐标
     Evecgb  =   localrvec2Global(Eveclc, md.l2gRot)
 
@@ -180,18 +198,10 @@ end # function
 计算磁偶极 `md` 在磁偶极局部坐标下给定方向 `r̂θϕ` 的远场电场。
 """
 function sourceLocalFarEfield(md::MagneticDipole, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
-    CT  =   Complex{FT}
-    # 笛卡尔坐标下的坐标值
-    r_xyzlc =   r̂θϕ.r̂
     # θϕ
     θϕ = r̂θϕ.θϕ
-
-    # 局部坐标ϕ方向向量
-    ϕhat    =   r̂θϕ.ϕhat
-
     # 局部坐标下电场的 ϕ 分量
     re  =   @SVector [0, -md.Iml*div4π*(Params.JK_0)*θϕ.sinθ]
-
     return re
 end # function
 
@@ -202,7 +212,6 @@ end # function
 计算磁偶极 `md` 在全局坐标下给定方向 `r̂θϕ` 的远场电场。
 """
 function sourceFarEfield(md::MagneticDipole, r̂θϕ::r̂θϕInfo{FT}) where {FT<:Real}
-    CT  =   Complex{FT}
     # 笛卡尔坐标下的坐标值    r_xyz
     # 判断坐标类型并计算赋值
     r_xyz   =   r̂θϕ.r̂
@@ -213,13 +222,13 @@ function sourceFarEfield(md::MagneticDipole, r̂θϕ::r̂θϕInfo{FT}) where {FT
     sinθ, _, sinϕ, cosϕ  =   θϕInfofromCart(r_xyzlc)
     # 局部坐标ϕ方向向量
     ϕhat    =   SVec3D{FT}(-sinϕ, cosϕ, zero(FT))
+    # 变换局部坐标ϕ方向向量到全局坐标下
+    ϕhatgb  =   localrvec2Global(ϕhat, md.l2gRot)
 
-    # 局部坐标下电场的xyz三个分量
-    Eveclc  =  -md.Iml*div4π*(Params.JK_0)*sinθ*ϕhat
-    # 转换到全局坐标
-    Evecgb  =   localrvec2Global(Eveclc, md.l2gRot)
+    # 局部坐标下电场只存在 ϕ 分量
+    Eveclcϕ  =  -md.Iml*div4π*(Params.JK_0)*sinθ
     # 提取两个分量
-    re  =   @SVector [r̂θϕ.θhat ⋅ Evecgb, r̂θϕ.ϕhat ⋅ Evecgb]
+    re  =   @SVector [r̂θϕ.θhat ⋅ ϕhatgb * Eveclcϕ, r̂θϕ.ϕhat ⋅ ϕhatgb * Eveclcϕ]
 
     return re
 end # function
@@ -264,7 +273,7 @@ function radiationIntegralL0(md::MagneticDipole, θϕ::θϕInfo{FT}) where {FT<:
     L_θ =  -md.Iml*θϕ.sinθ
     L_ϕ =   zero(FT)
     # 结果数组
-    return SVector{2, FT}(L_θ, L_ϕ)
+    return SVector{2, Complex{FT}}(L_θ, L_ϕ)
 
 end # function
 
@@ -275,7 +284,7 @@ end # function
 计算磁流源的辐射强度函数
 ``U_m(θ, ϕ) = \frac{Y_0}{8λ_0²}(|L_θ|² + |L_ϕ|²)``。
 """
-function radiationIntensityU_m(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:Real}
+function radiationIntensityU_m(md::MagneticDipole, θϕ::θϕInfo{FT}) where {FT<:Real}
     # 先计算磁流源的辐射积分
     local L = radiationIntegralL0(md, θϕ)
     # 再计算辐射强度
@@ -297,7 +306,7 @@ radiationDirectionCoeff(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:R
 
 计算方向性系数：``D_m(θ, ϕ) = 4π U_m(θ, ϕ)/P_{rad}``。
 """
-function radiationDirectionCoeff(md::MagneticDipole{FT}, θϕ::θϕInfo{FT}) where {FT<:Real}
+function radiationDirectionCoeff(md::MagneticDipole, θϕ::θϕInfo{FT}) where {FT<:Real}
     # 先计算磁流源的辐射强度
     local U =   radiationIntensityU_m(md, θϕ)
     
