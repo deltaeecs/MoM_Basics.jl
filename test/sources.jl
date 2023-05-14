@@ -15,7 +15,6 @@
 
 end
 
-
 @testset "MagneticDipole" begin
 
     md = MagneticDipole()

@@ -77,11 +77,11 @@ const GQPNTetraSglr  =   11
 ```
 正常求积四面体高斯求积信息。
 ```
-const TetraGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetra, Precision.FT)
+const TetraGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetra, Float32)
 ```
 处理奇异性时四面体高斯求积信息。
 ```
-const TetraGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetraSglr, Precision.FT)
+const TetraGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Tetrahedron, GQPNTetraSglr, Float32)
 
 """
     setHexaCoor!( tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}, tetraMeshData::TetrahedraMesh{IT, FT}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
