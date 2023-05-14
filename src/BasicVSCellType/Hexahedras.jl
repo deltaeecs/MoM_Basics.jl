@@ -13,17 +13,6 @@ end
 
 include("Quadrangle.jl")
 
-# """
-# 重载 getproperty 函数用于直接提取六面体信息
-# """
-# function Base.getproperty(tetra::HexahedraInfo, sym::Symbol)
-#     if sym === :faces
-#         return view(uniqueTris, tetra.facesID)
-#     else # fallback to getfield
-#         return getfield(tetra, sym)
-#     end
-# end
-
 """
     HexahedraInfo{IT<: Integer, FT<:AbstractFloat, CT<:Complex} <: VolumeCellType{IT, FT, CT}
 
@@ -95,15 +84,15 @@ const GQPNHexaSSglr =   64
 ```
 正常求积六面体高斯求积信息。
 ```
-const HexaGQInfo      =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexa, Precision.FT)
+const HexaGQInfo      =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexa, Float32)
 ```
 处理奇异性时六面体高斯求积信息。
 ```
-const HexaGQInfoSglr  =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSglr, Precision.FT)
+const HexaGQInfoSglr  =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSglr, Float32)
 ```
 处理超奇异性时六面体高斯求积信息。
 ```
-const HexaGQInfoSSglr =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSSglr, Precision.FT)
+const HexaGQInfoSSglr =   GaussQuadrature4Geo.GaussQuadratureInfo(:Hexahedron, GQPNHexaSSglr, Float32)
 
 
 """

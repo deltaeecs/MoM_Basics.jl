@@ -76,15 +76,15 @@ const GQPNQuadSSglr =   GQPNQuad1DSSglr^2
 """
 六面体边界四边形正常处理高斯求积信息。
 """
-const QuadGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuad, Precision.FT)
+const QuadGQInfo        =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuad, Float32)
 """
 六面体边界四边形处理奇异性高斯求积信息。
 """
-const QuadGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSglr, Precision.FT)
+const QuadGQInfoSglr    =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSglr, Float32)
 """
 六面体边界四边形处理超奇异性高斯求积信息。
 """
-const QuadGQInfoSSglr   =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSSglr, Precision.FT)
+const QuadGQInfoSSglr   =   GaussQuadrature4Geo.GaussQuadratureInfo(:Quadrangle, GQPNQuadSSglr, Float32)
 
 """
     getGQPQuad(quad::Quads4Hexa, ii::IT) where {IT <: Integer}

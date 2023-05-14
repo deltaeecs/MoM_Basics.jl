@@ -75,11 +75,11 @@ const GQPNTriSglr    =   7
 ```
 正常求积三角形高斯求积信息。
 ```
-const TriGQInfo          =   GaussQuadrature4Geo.GaussQuadratureInfo(:Triangle, GQPNTri, Precision.FT)
+const TriGQInfo          =   GaussQuadrature4Geo.GaussQuadratureInfo(:Triangle, GQPNTri, Float32)
 ```
 处理奇异性时三角形高斯求积信息。
 ```
-const TriGQInfoSglr      =   GaussQuadrature4Geo.GaussQuadratureInfo(:Triangle, GQPNTriSglr, Precision.FT)
+const TriGQInfoSglr      =   GaussQuadrature4Geo.GaussQuadratureInfo(:Triangle, GQPNTriSglr, Float32)
 
 @doc """
     getGQPTri(tri::TriangleInfo, i::IT) where {IT <: Integer}
