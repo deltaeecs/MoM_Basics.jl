@@ -154,6 +154,7 @@ function r̂θϕInfo(θ::∠Info{FT}, ϕ::FT) where {FT<:Real}
     ϕhat=   ϕhatfunc(θϕ)
     r̂θϕInfo{FT}(r̂, θhat, ϕhat, θϕ)
 end # function
+r̂θϕInfo{T}(θ, ϕ) where {T<:Real} = r̂θϕInfo(θ, ϕ)
 
 """
     r̂θϕInfo{FT}(rvec::AbstractVector{FT}) where {FT<:Real}
@@ -167,6 +168,7 @@ function r̂θϕInfo(rvec::AbstractVector{FT}) where {FT<:Real}
     ϕhat    =   ϕhatfunc(θϕ)
     r̂θϕInfo{FT}(r̂, θhat, ϕhat, θϕ)   
 end # function
+r̂θϕInfo{T}(rvec::AbstractVector{FT}) where {T<:Real, FT<:Real} = r̂θϕInfo(rvec)
 
 """
     θϕInfofromCart(rvec::Vec3D{FT}) where {FT<:Real}
