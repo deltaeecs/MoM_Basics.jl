@@ -17,3 +17,33 @@
 ## Introduction
 
 A Julia package for meshes and basis functions of Method of Moments (MoM) and Multi-level Fast Multipole Algorithm (MLFMA). The integration package names CEM\_MoMs ([![github](https://img.shields.io/badge/github-blue.svg)](https://github.com/deltaeecs/CEM_MoMs.jl), [![gitee](https://img.shields.io/badge/gitee-red.svg)](https://gitee.com/deltaeecs/CEM_MoMs.jl)) .
+
+## Install and Test
+
+### Install
+
+In Pkg mode of Julia REPL：
+
+```julia
+julia> Pkg.add("MoM_Basics")
+```
+
+or
+
+```julia
+pkg> add MoM_Basics
+```
+
+### Test
+
+In Pkg mode of Julia REPL：
+
+```julia
+julia> Pkg.test("MoM_Basics")
+```
+
+Or
+
+```julia
+pkg> add MoM_Basics
+```
