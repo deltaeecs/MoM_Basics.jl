@@ -9,7 +9,7 @@ CFIE混合系数 `CFIEα`、网格文件名 `meshfilename`。
 function inputBasicParameters(;frequency::FT = Params.frequency, ieT::Symbol = :EFIE, CFIEα::FT = 0.6,
     meshfilename::String = SimulationParams.meshfilename) where {FT<:AbstractFloat}
     # 设置 BLAS 的线程防止冲突
-    @info "CEM_MoMs start with $(nthreads()) threads."
+    @info "MoMs start with $(nthreads()) threads."
     BLAS.set_num_threads(nthreads())
     frequency::Precision.FT   =   frequency
     # 角频率
