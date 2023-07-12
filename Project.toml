@@ -20,7 +20,7 @@ ThreadsX = "ac1d9e8a-700a-412c-b207-f0111f4b6c0d"
 
 [compat]
 FastGaussQuadrature = "0.5 - 0.6"
-Meshes = "0.28 - 0.30"
+Meshes = "0.28 - 0.60"
 OffsetArrays = "1.10 - 1.12"
 ProgressMeter = "1.7 - 1.8"
 Reexport = "1.2 - 1.3"
