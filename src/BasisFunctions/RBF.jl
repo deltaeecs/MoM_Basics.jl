@@ -45,7 +45,7 @@ u=1, u=0, v = 1, v = 0, w = 1, w = 0
 function boundaryRBF(h::Hexahedron)
     indices = [ (2,3,7,6),(1,4,8,5),(4,3,7,8),
                 (1,2,6,5),(5,6,7,8),(1,2,3,4)]
-    SimpleMesh(h.vertices, connect.(indices))
+    SimpleMesh([h.vertices...], connect.(indices))
 end
 
 

@@ -127,7 +127,7 @@ function setHexaParam!(hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}) where {IT<:
         # 第 i 六面体
         hexaInfo    =   hexasInfo[i]
         # 六面体的网格
-        hexa    =   Hexahedron(Meshes.Point3.(eachcol(hexaInfo.vertices)))
+        hexa    =   Hexahedron(Meshes.Point3.(eachcol(hexaInfo.vertices))...)
         # 体积
         hexaInfo.volume =   measure(hexa)
         # 六个四边形面
