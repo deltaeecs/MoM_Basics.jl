@@ -52,11 +52,11 @@ struct MeshNodeTriTetraHexa{IT, FT} <: MeshDataType
 end
 
 """
-    getNodeTriTetraHexaNas(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
+    getNodeElems(::Val{:NAS}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
 
 读取 `.nas` 文件中的节点坐标、三角形点、四面体点、六面体点。
 """
-function getNodeTriTetraHexaNas(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
+function getNodeElems(::Val{:NAS}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数
     modiSimulationParams!(;meshfilename = pathname, meshunit = meshUnit)
     # Nas网格
@@ -188,7 +188,7 @@ function getNodeTriTetraHexaNas(pathname::ST; FT::Type{T}=Precision.FT, meshUnit
         throw("输入网格文件出错，请检查！")
     end
     # 返回复合类型MeshNodeTriTetra
-    MeshNodeTriTetraHexa{Int64, FT}(geonum, meshT, trinum, tetranum, hexanum, node, triangles, tetrahedras, hexahedras)
+    MeshNodeTriTetraHexa{Int64, FT}(geonum, meshT, trinum, tetranum, hexanum, node, triangles, tetrahedras, hexahedras), nothing
 
 end
 
@@ -230,29 +230,18 @@ end
 读取文件中的节点坐标、三角形点、四面体点、六面体点
 """
 function getMeshData(meshFileName::String; meshUnit=:mm)
-    # 创建结果目录
-    ~isdir(SimulationParams.resultDir) && mkpath(SimulationParams.resultDir)
-    if endswith(meshFileName, ".nas")
-        @clock "网格文件读取" begin
-            meshData = getNodeTriTetraHexaNas(meshFileName; meshUnit = meshUnit)
-        end
-        memory["网格文件"] = Base.summarysize(meshData)
-        # 更新保存的参数信息
-        open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
-            record_CellInfo(meshData; io = f)
-        end
-        return meshData, nothing
-    elseif endswith(meshFileName, ".dat")
-        @clock "网格文件读取" begin
-            meshData, εᵣs = getdatNodeElementParam(meshFileName, meshUnit=meshUnit)
-        end
-        memory["网格文件"] = Base.summarysize(meshData)
-        # 更新保存的参数信息
-        open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
-            record_CellInfo(meshData; io = f)
-        end
-        return meshData, εᵣs
+    # 获取文件扩展名并转换为大写的 Symbol
+    extendName = Symbol(uppercase(split(meshFileName, ".")[end]))
+    @clock "网格文件读取" begin
+        meshData, εᵣs = getNodeElems(Val(extendName), meshFileName; meshUnit = meshUnit)
     end
+    # 统计网格数据占用内存大小
+    memory["网格文件"] = Base.summarysize(meshData)
+    # 更新保存的参数信息
+    open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
+        record_CellInfo(meshData; io = f)
+    end
+    return meshData, εᵣs
 end
 
 """
@@ -286,11 +275,11 @@ end
 
 
 """
-    getdatNodeElementParam(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
+    getNodeElems(::Val{:DAT}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
 
 读取 `.dat` 格式的自定义项目文件。
 """
-function getdatNodeElementParam(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
+function getNodeElems(::Val{:DAT}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数
     modiSimulationParams!(;meshfilename = pathname, meshunit = meshUnit)
     
@@ -311,11 +300,11 @@ function getdatNodeElementParam(pathname::ST; FT::Type{T}=Precision.FT, meshUnit
     # 无符号的索引速度比有符号慢不少，故不次采用
     # LocalInt64=   ((trinum > typemax(Int32) | tetranum > typemax(Int32)) ?  Int64 : Int32)
     # 点的 id 不一定按顺序来，因此早建立一个新索引
-    node        =   zeros(FT,(3, nodenum ))
+    node        =   zeros(FT,        (3, nodenum ))
     triangles   =   zeros(Int64,     (3, trinum  ))
     tetrahedras =   zeros(Int64,     (4, tetranum))
     hexahedras  =   zeros(Int64,     (8, hexanum ))
-    εᵣsNodes    =   zeros(Complex{FT},   nodenum )
+    εᵣsNodes    =   zeros(Complex{FT},   nodenum  )
     εᵣsTetra    =   zeros(Complex{FT},   tetranum )
 
     # 读取以上信息
