@@ -56,9 +56,28 @@ function setGeosPermittivity!(geosInfo::AbstractVector{VT}, εᵣ::CT = 1.0(1+0i
 
     # 更新保存的参数信息
     # 更新保存的参数信息
-    open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
-        @printf f "%21s\n" "介质信息"
-        @printf f "%-5s %28s\n" "εᵣ" εᵣ
+    # open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
+    #    @printf f "%21s\n" "介质信息"
+    #    @printf f "%-5s %28s\n" "εᵣ" εᵣ
+    #end
+
+    # 先读取原始文件判断是否已有介质信息，再更新保存或添加的新参数信息，确保不会重复写入
+    contents = readlines(SimulationParams.resultDir*"/InputArgs.txt", keep = true)
+
+    notExist = true
+    for i in eachindex(contents)
+        if occursin("介质信息", contents[i])
+            contents[i+1] = @sprintf "%-5s %28s\n" "εᵣ" εᵣ
+            notExist = false
+        end
+    end
+    
+    open(SimulationParams.resultDir*"/InputArgs.txt", "w")  do f
+        write(f, contents...)
+        notExist && begin
+            @printf f "%21s\n" "介质信息"
+            @printf f "%-5s %28s\n" "εᵣ" εᵣ 
+        end
     end
 
     nothing
@@ -79,9 +98,28 @@ function setGeosPermittivity!(geosInfo::AbstractVector{VT}, εᵣs::T) where {VT
     end
 
     # 更新保存的参数信息
-    open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
-        @printf f "%21s\n" "介质信息"
-        @printf f "%-5s %28s\n" "εᵣ" mean(εᵣs)
+    #open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
+    #    @printf f "%21s\n" "介质信息"
+    #    @printf f "%-5s %28s\n" "εᵣ" mean(εᵣs)
+    #end
+
+    # 先读取原始文件判断是否已有介质信息，再更新保存或添加的新参数信息，确保不会重复写入
+    contents = readlines(SimulationParams.resultDir*"/InputArgs.txt", keep = true)
+
+    notExist = true
+    for i in eachindex(contents)
+        if occursin("介质信息", contents[i])
+            contents[i+1] = @printf f "%-5s %28s\n" "εᵣ" mean(εᵣs) 
+            notExist = false
+        end
+    end
+    
+    open(SimulationParams.resultDir*"/InputArgs.txt", "w")  do f
+        write(f, contents...)
+        notExist && begin
+            @printf f "%21s\n" "介质信息"
+            @printf f "%-5s %28s\n" "εᵣ" mean(εᵣs)
+        end
     end
 
     nothing

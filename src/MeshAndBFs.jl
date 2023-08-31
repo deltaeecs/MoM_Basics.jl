@@ -283,8 +283,8 @@ end
 通过网格信息 `meshData` 创建基函数信息。
 """
 function getBFsFromMeshData(meshData; sbfT = :nothing, vbfT = :nothing)
-    # 保存仿真参数
-    saveSimulationParams(;sbfT = sbfT, vbfT = vbfT)
+    # 保存仿真参数 (重复，已丢弃)
+    # saveSimulationParams(;sbfT = sbfT, vbfT = vbfT)
     # 更新面、体基函数类型
     updateVSBFTParams!(;sbfT = sbfT, vbfT = vbfT)
 
@@ -292,8 +292,9 @@ function getBFsFromMeshData(meshData; sbfT = :nothing, vbfT = :nothing)
     @clock "构建网格元、基函数" begin
         ngeo, nbf, geosInfo, bfsInfo = getCellsBFs(meshData, vbfT)
     end
-    memory["网格元"]    =   Base.summarysize(geosInfo)
-    memory["基函数"]    =   Base.summarysize(bfsInfo)
+    ## recordMem 打开才记录内存信息，对于大网格该过程非常耗时，选择性打开
+    SimulationParams.recordMem && begin memory["网格元"]    =   Base.summarysize(geosInfo) end
+    SimulationParams.recordMem && begin memory["基函数"]    =   Base.summarysize(bfsInfo) end
     return  ngeo, nbf, geosInfo, bfsInfo
 
 end
