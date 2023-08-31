@@ -382,7 +382,7 @@ function getNodeElems(::Val{:VTK}, pathname::ST; FT::Type{T}=Precision.FT, meshU
     linenum = countlines(pathname)
     open(pathname, "r") do VtkMesh
         pmeter = Progress(linenum, "处理网格文件中...")
-        for _ in 1:linenum
+        while true
             next!(pmeter)
             line = readline(VtkMesh)
             if startswith(line, "POINTS")
@@ -391,6 +391,7 @@ function getNodeElems(::Val{:VTK}, pathname::ST; FT::Type{T}=Precision.FT, meshU
                 node = zeros(FT,(3, nodenum))
                 ## 开始处理节点数据, 循环 nodenum 次
                 for i in 1:nodenum
+                    next!(pmeter)
                     line = readline(VtkMesh)
                     node[:, i] = parse.(FT, split(line))
                 end
@@ -400,6 +401,7 @@ function getNodeElems(::Val{:VTK}, pathname::ST; FT::Type{T}=Precision.FT, meshU
                 triangles = zeros(Int64, (3, trinum))
                 ## 开始处理四面体数据, 循环 tetranum 次
                 for i in 1:trinum
+                    next!(pmeter)
                     line = readline(VtkMesh)
                     triangles[:, i] = parse.(Int64, split(line)[2:end]) .+ 1  # julia数组从1开始所以补1
                 end
@@ -409,6 +411,7 @@ function getNodeElems(::Val{:VTK}, pathname::ST; FT::Type{T}=Precision.FT, meshU
                 tetrahedras = zeros(Int64, (4, tetranum))
                 ## 开始处理四面体数据, 循环 tetranum 次
                 for i in 1:tetranum
+                    next!(pmeter)
                     line = readline(VtkMesh)
                     tetrahedras[:, i] = parse.(Int64, split(line)[2:end]) .+ 1  # julia数组从1开始所以补1
                 end
