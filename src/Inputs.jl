@@ -61,6 +61,7 @@ function saveSimulationParams(;meshfilename::String = SimulationParams.meshfilen
         @printf f "%19s\n" "仿真参数"
         @printf f "%-9s %24s\n" "输入文件" meshfilename
         @printf f "%-9s %24s\n" "仿真精度" Precision.FT
+        @printf f "%-9s %24s\n" "内存记录" SimulationParams.recordMem ? "ON" : "OFF"
         @printf f "%-9s %24i\n" "线程数量" nthreads()
         @printf f "%-13s %16.4f GHz\n" "频率" Params.frequency/1e9
         @printf f "%-19s %14s\n" "积分方程类型" SimulationParams.ieT

@@ -1,7 +1,7 @@
 name = "MoM_Basics"
 uuid = "84796d1e-6a74-43fe-971c-cdafebd16eaa"
 authors = ["deltaeecs <1225385871@qq.com> and contributors"]
-version = "0.0.7"
+version = "0.0.8"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"

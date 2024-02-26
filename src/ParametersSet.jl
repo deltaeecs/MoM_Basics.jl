@@ -181,6 +181,7 @@ SHOWIMAGE   ::Bool          根是否要在前端显示图片
 discreteVar ::String        离散的体未知量类型，支持位移电流 `"D"` 或等效电流 `"J"`
 sbfT        ::Symbol        面基函数类型，目前仅支持 `:RWG`
 vbfT        ::Symbol        体基函数类型，目前支持 `:SWG, :RBF, :PWC`
+recordMem   ::Bool          是否记录内存信息
 ```
 """
 mutable struct SimulationParamsType
@@ -192,6 +193,7 @@ mutable struct SimulationParamsType
     discreteVar ::String
     sbfT        ::Symbol
     vbfT        ::Symbol
+    recordMem   ::Bool
 end
 
 """
@@ -201,10 +203,17 @@ end
 `SimulationParamsType` 的默认构造函数。
 """
 function SimulationParamsType(;ieT::Symbol=:EFIE, meshfilename::String = "", meshunit::Symbol = :mm, 
-    SHOWIMAGE = true, discreteVar = "D", sbfT = :RWG, vbfT = :nothing)
+    SHOWIMAGE = true, discreteVar = "D", sbfT = :RWG, vbfT = :nothing, recordMem = true)
     # 保存结果的数组
     resultDir   =   "results/"*"$(Date(now()))/$(hour(now())).$(minute(now())) $(Params.frequency/1e9)GHz/"
-    SimulationParamsType(resultDir, ieT, meshfilename, meshunit, SHOWIMAGE, discreteVar, sbfT, vbfT)
+    SimulationParamsType(resultDir, ieT, meshfilename, meshunit, SHOWIMAGE, discreteVar, sbfT, vbfT, recordMem)
+end
+
+"""
+    设置是否开启内存记录
+"""
+function setRecordMem!(State::Bool = false)
+    SimulationParams.recordMem = State
 end
 
 """
@@ -228,7 +237,8 @@ function modiSimulationParams!(;ieT::Symbol=SimulationParams.ieT,
     SHOWIMAGE   = SimulationParams.SHOWIMAGE,
     discreteVar = SimulationParams.discreteVar,
     sbfT        = SimulationParams.sbfT,
-    vbfT        = SimulationParams.vbfT
+    vbfT        = SimulationParams.vbfT,
+    recordMem   = SimulationParams.recordMem
     )
     # 保存结果的数组
     resultDir   =   "results/"*"$(Date(now()))/$(hour(now())).$(minute(now())) $(Params.frequency/1e9)GHz/"
@@ -240,8 +250,8 @@ function modiSimulationParams!(;ieT::Symbol=SimulationParams.ieT,
     SimulationParams.discreteVar=   discreteVar
     SimulationParams.sbfT       =   sbfT
     SimulationParams.vbfT       =   vbfT
-
-    saveSimulationParams()
+    SimulationParams.recordMem  =   recordMem
+    # saveSimulationParams()
     nothing
 end
 

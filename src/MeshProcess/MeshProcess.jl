@@ -58,7 +58,7 @@ end
 """
 function getNodeElems(::Val{:NAS}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数
-    modiSimulationParams!(;meshfilename = pathname, meshunit = meshUnit)
+    # modiSimulationParams!(;meshfilename = pathname, meshunit = meshUnit)
     # Nas网格
     meshfile    = NasMesh(pathname)
 
@@ -235,8 +235,12 @@ function getMeshData(meshFileName::String; meshUnit=:mm)
     @clock "网格文件读取" begin
         meshData, εᵣs = getNodeElems(Val(extendName), meshFileName; meshUnit = meshUnit)
     end
+
+    # 修改并记录仿真信息
+    modiSimulationParams!(;meshfilename = meshFileName, meshunit = meshUnit)
+    saveSimulationParams()
     # 统计网格数据占用内存大小
-    memory["网格文件"] = Base.summarysize(meshData)
+    SimulationParams.recordMem && begin memory["网格文件"] = Base.summarysize(meshData) end
     # 更新保存的参数信息
     open(SimulationParams.resultDir*"/InputArgs.txt", "a+")  do f
         record_CellInfo(meshData; io = f)
@@ -281,7 +285,7 @@ end
 """
 function getNodeElems(::Val{:DAT}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
     # 更新仿真参数
-    modiSimulationParams!(;meshfilename = pathname, meshunit = meshUnit)
+    # modiSimulationParams!(;meshfilename = pathname, meshunit = meshUnit)
     
     # 打开文件
     mesh = open(pathname, "r")
@@ -354,5 +358,94 @@ function getNodeElems(::Val{:DAT}, pathname::ST; FT::Type{T}=Precision.FT, meshU
     end
     # 返回复合类型MeshNodeTriTetra
     MeshNodeTriTetraHexa{Int64, FT}(geonum, meshT, trinum, tetranum, hexanum, node, triangles, tetrahedras, hexahedras), εᵣsTetra
+
+end
+
+"""
+    getNodeTriTetraHexaVtk(pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :m) where {ST <: AbstractString,T<:AbstractFloat}
+
+读取 `.vtk` 文件中的节点坐标、三角形点、四面体点、六面体点(目前不支持六面体)。
+"""
+function getNodeElems(::Val{:VTK}, pathname::ST; FT::Type{T}=Precision.FT, meshUnit = :mm) where {ST <: AbstractString,T<:AbstractFloat}
+
+    println("处理网格中...")
+    # 预分配存储节点、三角形、四面体、六面体数组
+    # 无符号的索引速度比有符号慢不少，故不次采用
+    # LocalInt64=   ((trinum > typemax(Int32) | tetranum > typemax(Int32)) ?  Int64 : Int32)
+    nodenum = 0; trinum  = 0; tetranum= 0; hexanum = 0 
+    node        =   zeros(FT,(3, nodenum))
+    triangles   =   zeros(Int64,     (3, trinum  ))
+    tetrahedras =   zeros(Int64,     (4, tetranum))
+    hexahedras  =   zeros(Int64,     (8, hexanum ))
+
+    # 打开文件, 找出# 节点数、三角形数、四面体数、六面体数
+    linenum = countlines(pathname)
+    open(pathname, "r") do VtkMesh
+        pmeter = Progress(linenum, "处理网格文件中...")
+        while true
+            next!(pmeter)
+            line = readline(VtkMesh)
+            if startswith(line, "POINTS")
+                nodenum = parse(Int64, split(line)[2])
+                ## 重新分配节点数组
+                node = zeros(FT,(3, nodenum))
+                ## 开始处理节点数据, 循环 nodenum 次
+                for i in 1:nodenum
+                    next!(pmeter)
+                    line = readline(VtkMesh)
+                    node[:, i] = parse.(FT, split(line))
+                end
+            elseif startswith(line, "POLYGONS")
+                trinum = parse(Int64, split(line)[2])
+                ## 重新分配四面体数组
+                triangles = zeros(Int64, (3, trinum))
+                ## 开始处理四面体数据, 循环 tetranum 次
+                for i in 1:trinum
+                    next!(pmeter)
+                    line = readline(VtkMesh)
+                    triangles[:, i] = parse.(Int64, split(line)[2:end]) .+ 1  # julia数组从1开始所以补1
+                end
+            elseif startswith(line, "CELLS")
+                tetranum = parse(Int64, split(line)[2])
+                ## 重新分配四面体数组
+                tetrahedras = zeros(Int64, (4, tetranum))
+                ## 开始处理四面体数据, 循环 tetranum 次
+                for i in 1:tetranum
+                    next!(pmeter)
+                    line = readline(VtkMesh)
+                    tetrahedras[:, i] = parse.(Int64, split(line)[2:end]) .+ 1  # julia数组从1开始所以补1
+                end
+            else
+                eof(VtkMesh) ? break : continue
+            end
+        end
+    end
+
+    if meshUnit == :mm
+        node .*= 1e-3
+    elseif meshUnit == :cm
+        node .*= 1e-2
+    elseif meshUnit == :m
+        nothing
+    else
+        throw("目前只支持 米(m)， 厘米(cm)， 毫米(mm) 三种单位")
+    end
+
+    # 总的网格单元数
+    geonum  =   trinum + tetranum + hexanum
+    # 网格文件类型
+    meshT   =   if (trinum > 0) && ((tetranum > 0) || (hexanum > 0))
+        VSCellType
+    elseif (trinum > 0)
+        TriangleInfo{Int, FT}
+    elseif (tetranum > 0)
+        TetrahedraInfo{Int, FT, Complex{FT}}
+    elseif (hexanum > 0)
+        HexahedraInfo{Int, FT, Complex{FT}}
+    else
+        throw("输入网格文件出错，请检查！")
+    end
+    # 返回复合类型MeshNodeTriTetra
+    MeshNodeTriTetraHexa{Int64, FT}(geonum, meshT, trinum, tetranum, hexanum, node, triangles, tetrahedras, hexahedras), nothing
 
 end

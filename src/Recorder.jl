@@ -80,11 +80,15 @@ end
 展示时间内存消耗数据记录。
 """
 function show_memory_time(io::IO=Core.stdout; mem_unit = :MB, time_unit = :s)
-    @printf io "%19s\n" "内存"
-    for (k, v) in memory
-        m = byte2other(v, mem_unit)
-        @printf(io,  "%-20s %10.3f %2s\n", k, m, mem_unit)
+
+    SimulationParams.recordMem && begin
+        @printf io "%19s\n" "内存"
+        for (k, v) in memory
+            m = byte2other(v, mem_unit)
+            @printf(io,  "%-20s %10.3f %2s\n", k, m, mem_unit)
+        end
     end
+    
     @printf io "%19s\n" "时间"
     for (k, v) in timer
         t = second_to_other(v, time_unit)
