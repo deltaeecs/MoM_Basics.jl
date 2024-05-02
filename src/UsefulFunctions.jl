@@ -275,7 +275,7 @@ const divπ = 1/π
 """
     sincmath(x::T) where{T<:Number}
 
-Julia 自带 [`Base.sinc`](@ref) 函数计算的是归一化辛格函数:
+Julia 自带 [`sinc`] 函数计算的是归一化辛格函数:
 
 ``sinc(x)     =   sin(πx)/(πx)``
 
