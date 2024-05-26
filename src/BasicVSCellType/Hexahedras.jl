@@ -114,6 +114,22 @@ function setHexaCoor!( hexasInfo::Vector{HexahedraInfo{IT, FT, CT}},
     return nothing
 end
 
+"""
+    volume(vertices::Vararg{T, 8}) where {T}
+
+计算八个点`vertices`组成的六面体体积。
+"""
+function volume(vertices::Vararg{T, 8}) where {T}
+    v = 0.0
+    # 分解为 5 个四面体累加体积
+    v += volume(vertices[1], vertices[2], vertices[3], vertices[6])
+    v += volume(vertices[1], vertices[3], vertices[4], vertices[8])
+    v += volume(vertices[1], vertices[5], vertices[6], vertices[8])
+    v += volume(vertices[1], vertices[3], vertices[6], vertices[8])
+    v += volume(vertices[3], vertices[6], vertices[7], vertices[8])
+    return v
+end
+
 
 """
     setHexaParam!(hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
@@ -126,29 +142,25 @@ function setHexaParam!(hexasInfo::Vector{HexahedraInfo{IT, FT, CT}}) where {IT<:
         @inbounds begin 
         # 第 i 六面体
         hexaInfo    =   hexasInfo[i]
-        # 六面体的网格
-        hexa    =   Hexahedron(Meshes.Point3.(eachcol(hexaInfo.vertices))...)
         # 体积
-        hexaInfo.volume =   measure(hexa)
+        hexaInfo.volume =   volume(eachcol(hexaInfo.vertices)...)
         # 六个四边形面
-        quads   =   boundaryRBF(hexa)
+        quads   =   boundaryRBF(eachcol(hexaInfo.vertices)...)
         # 对四个面循环计算面的外法向量，注意第 facei 个面为 第 facei 个 vertice 对面的四个点构成的四边形
         for facei in 1:6
             #  第 facei 个四边形
             quadi   =  quads[facei]
-            # 四个点的视图
-            faceVertViews   =   quadi.vertices
 
             # 计算面法向量（未定向\未归一化）
             @views facen̂    =   hexaInfo.facesn̂[:, facei]
-            @views facen̂   .=   cross(faceVertViews[2] - faceVertViews[1],  faceVertViews[2] - faceVertViews[3])
-            # 未归一化面法向量的模即为四边形面积两倍
-            faceArea    =   area(quadi)
+            @views facen̂   .=   cross(quadi[2] - quadi[1],  quadi[2] - quadi[3])
+            # 计算面积
+            faceArea    =   area(quadi...)
             # 归一化面法向量
             facen̂     ./=   norm(facen̂)
 
             # 定向，第 facei 个 vertice 点到其余四个点中的一个的向量与外法向量的点乘结果应该大于0
-            @views ((faceVertViews[1].coords .- hexaInfo.center) ⋅ facen̂ < 0) && begin facen̂ .*= -1 end
+            @views ((quadi[1] .- hexaInfo.center) ⋅ facen̂ < 0) && begin facen̂ .*= -1 end
 
             # 写入结果
             hexaInfo.facesArea[facei]  =   faceArea
@@ -167,9 +179,6 @@ end # function
 根据六面体网格信息 `hexameshData` 和体基函数类型 `VolumeBFType` 生成网格信息向量 `hexasInfo` 和基函数信息向量 `bfsInfo` 。
 """
 function getHexasInfo(hexameshData::HexahedraMesh{IT, FT}, VolumeBFType::Symbol) where{IT, FT}
-
-    # # 先生成 SimpleMesh
-    # hexaSimpleMesh = MeshFileReader.fromNodesConns2SimpleMesh(hexameshData.node, hexameshData.hexahedras)
     # 分配四边形信息类型数组
     hexasInfo       =   [HexahedraInfo{IT, FT, Complex{FT}}()  for _ in 1:hexameshData.hexnum ]
     # 写入六面体的八个点的id和点坐标、几何中心数据
