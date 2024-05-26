@@ -129,6 +129,19 @@ function setTricoor!(   trianglesInfo::Vector{TriangleInfo{IT, FT}},
 end
 
 """
+    area(vertices::Vararg{T, 3}) where {T}
+
+计算三个点`vertices`组成的三角形面积。
+"""
+function area(vertices::Vararg{T, 3}) where {T}
+    # edgev̂指向三角形的的指向向量(未单位化)
+    edge12 = vertices[2] - vertices[1]
+    edge13 = vertices[3] - vertices[1]
+    a   = norm(cross(edge12, edge13))/2
+    return a
+end
+
+"""
     setTriParam!(triangleInfo::TriangleInfo)
 
 计算三角形边长、边外法向量、面法向量、面积，直接写入 `triangleInfo` 。

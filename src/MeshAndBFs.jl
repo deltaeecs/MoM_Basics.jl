@@ -1,7 +1,5 @@
 # 根据网格中三角形\四面体的数量，建立RWG、PWC、SWG、RBF基函数
 # 网格文件处理函数
-# include("MeshFileReader.jl")
-# using .MeshFileReader
 include("MeshProcess/MeshProcess.jl")
 include("BasicVSCellType/CellTypes.jl")
 include("BasisFunctions/BFs.jl")

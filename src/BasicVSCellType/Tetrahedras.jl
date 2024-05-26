@@ -101,6 +101,22 @@ function setTetraCoor!( tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}},
 
     return nothing
 end
+
+"""
+    volume(vertices::Vararg{T, 4}) where {T}
+
+计算四个点`vertices`组成的四面体体积。
+"""
+function volume(vertices::Vararg{T, 4}) where {T}
+    # 计算四面体的某个点（第一个）指向第其他个点的三个向量
+    vert12 = vertices[2] .- vertices[1]
+    vert13 = vertices[3] .- vertices[1]
+    vert14 = vertices[4] .- vertices[1]
+    # 四面体体积
+    v      = cross(vert12, vert13) ⋅ vert14 / 6
+    return v
+end
+
 """
     setTetraParam!(tetrasInfo::Vector{TetrahedraInfo{IT, FT, CT}}) where {IT<:Integer, FT<:AbstractFloat, CT<:Complex}
 

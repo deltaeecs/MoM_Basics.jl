@@ -38,6 +38,17 @@ function Quads4Hexa{IT, FT}() where {IT <: Integer, FT<:AbstractFloat}
 end
 
 """
+    area(vertices::Vararg{T, 3}) where {T}
+
+计算四个点`vertices`组成的四边形面积。
+"""
+function area(vertices::Vararg{T, 4}) where {T}
+    a   = area(vertices[1], vertices[2], vertices[3])
+    a  += area(vertices[1], vertices[3], vertices[4])
+    return a
+end
+
+"""
     (q::Quads4Hexa)(u::FT, v::FT) where {FT}
 
 计算六面体边界四边形在局部坐标 `(u, v)` 下的点。

@@ -34,7 +34,7 @@ end
 RBF()   =    RBF{IntDtype, Precision.FT}()
 
 @doc raw"""
-    boundaryRBF(h::Hexahedron)
+    boundaryRBF(h::vertices::Vararg{T, 8}) where {T}
 
 重载面的提取顺序以匹配屋顶基函数 (RBF) 在六面体中的面按 
 ```math
@@ -42,10 +42,10 @@ u=1, u=0, v = 1, v = 0, w = 1, w = 0
 ```
 的顺序排列。
 """
-function boundaryRBF(h::Hexahedron)
+function boundaryRBF(vertices::Vararg{T, 8}) where {T}
     indices = [ (2,3,7,6),(1,4,8,5),(4,3,7,8),
                 (1,2,6,5),(5,6,7,8),(1,2,3,4)]
-    SimpleMesh([h.vertices...], connect.(indices))
+    map(quadIdx -> map(i -> vertices[i], quadIdx), indices)
 end
 
 
